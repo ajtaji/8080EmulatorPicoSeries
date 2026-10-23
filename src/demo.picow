@@ -1,0 +1,98 @@
+; Pico W demo: a smoke test, then four instruction mixes measured repeatedly.
+#CLOCK_KHZ = 200000
+#CPU_TIMING = 0
+#CPU_ASM_TAIL = 1
+#CPU_MEMMAP = 0
+EnableExplicit
+XIncludeFile "RP2040/Lib/clocks.pico"
+XIncludeFile "RP2040/Lib/timer.pico"
+XIncludeFile "RP2040/Lib/uart.pico"
+XIncludeFile "RP2040/Lib/usb_serial.pico"
+XIncludeFile "RP2040/Lib/safety.pico"
+XIncludeFile "i8080.pico"
+XIncludeFile "io.pico"
+Global TestIndex.i, TestSteps.i, TestStart.i, TestElapsed.i, WaitStart.i, OutCount.i
+
+Procedure.i CpuPortIn(port.i)
+  ProcedureReturn port
+EndProcedure
+Procedure CpuPortOut(port.i, value.i)
+  OutCount = OutCount + 1
+EndProcedure
+
+Procedure Poke8080(adr.i, *bytes.i, n.i)
+  Protected i.i
+  For i = 0 To n - 1
+    M(adr + i) = PeekA(*bytes + i) & 255
+  Next
+EndProcedure
+
+Procedure Measure(*name.i, *code.i, n.i)
+  Poke8080($100, *code, n)
+  CpuReset() : CpuPC = $100 : CpuSP = $F000
+  TestStart = Micros()
+  TestSteps = CpuRun(1000000)
+  TestElapsed = Micros() - TestStart
+  Say(*name) : Say(" instructions=") : Num(TestSteps)
+  Say(" us=") : Num(TestElapsed)
+  If TestElapsed > 0
+    Say(" instructions/s=") : Num(Rate(TestSteps, TestElapsed))
+  EndIf
+  Eol()
+EndProcedure
+
+Procedure Main()
+  SafetyBoot()
+  ClockInitKhz(#CLOCK_KHZ)
+  TimerInit()
+  UsbSerialInit()
+  WaitStart = Micros()
+  While UsbSerialReady() = 0
+    UsbSerialTask() : SafetyPet()
+    If Micros() - WaitStart > 30000000
+      Break
+    EndIf
+  Wend
+  WaitUs(200000)
+  Say("8080 PureMetal Pico W clk_sys kHz=") : Num(ClockSysKhz()) : Eol()
+  ; MVI B,10 / XRA A / loop: ADD B / DCR B / JNZ loop / HLT
+  Poke8080($100, ?SumCode, 9)
+  CpuReset() : CpuPC = $100
+  TestSteps = CpuRun(1000)
+  Say("sum test A=") : Num(CpuA) : Say(" instructions=") : Num(TestSteps)
+  If CpuA = 55 And TestSteps = 33 And CpuHalted = 1 And CpuPC = $109
+    Say(" PASS")
+  Else
+    Say(" FAIL")
+  EndIf
+  Eol()
+  For TestIndex = 0 To 255
+    M($4000 + TestIndex) = TestIndex ! $A5
+  Next
+  Repeat
+    Measure("register/branch DCR/JNZ", ?LoopCode, 7)
+    Measure("arithmetic ADI/XRI/RLC/RAR/ADD/DAA", ?AluCode, 11)
+    Measure("memory copy MOV/STAX/INX/DCR/JNZ", ?CopyCode, 19)
+    Measure("call/stack CALL/PUSH/POP/RET", ?CallCode, 21)
+    For TestIndex = 0 To 255
+      If M($5000 + TestIndex) <> (TestIndex ! $A5)
+        Say("memory copy FAIL") : Eol()
+        Break
+      EndIf
+    Next
+    WaitUs(1000000)
+  ForEver
+EndProcedure
+
+DataSection
+SumCode:
+  Data.a $06,10, $AF, $80, $05, $C2,$03,$01, $76
+LoopCode:
+  Data.a $0D, $C2,$00,$01, $C3,$00,$01
+AluCode:
+  Data.a $C6,$01, $EE,$55, $07, $1F, $80, $27, $C3,$00,$01
+CopyCode:
+  Data.a $21,$00,$40, $11,$00,$50, $0E,$00, $7E, $12, $23, $13, $0D, $C2,$08,$01, $C3,$00,$01
+CallCode:
+  Data.a $31,$00,$F0, $CD,$10,$01, $C3,$03,$01, 0,0,0,0,0,0,0, $C5, $E5, $E1, $C1, $C9
+EndDataSection

@@ -1,0 +1,19 @@
+# Fetched test programs and their embedded copies (tools/fetch_tests.py, tools/embed_tests.py)
+Diagnostics/upstream/*.COM
+Diagnostics/upstream/README.TXT
+Diagnostics/test_data.pico
+Diagnostics/test_data.pico2
+# Build outputs (the demo's UF2 under firmware/ is kept)
+*.asm
+*.dbg
+*.sym
+*.sym.meta
+*.cycles.txt
+*.build.log
+*.stderr.log
+Diagnostics/*.uf2
+firmware/*.log
+bench/
+desktop/*.exe
+desktop/*.log
+desktop/purebasic.c

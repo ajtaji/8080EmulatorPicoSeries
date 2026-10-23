@@ -1,0 +1,465 @@
+; 8080 core verification on the board. Included by verify*.picow, which set
+; #CLOCK_KHZ, #CPU_TIMING, #CPU_ASM_TAIL and #CPU_MEMMAP.
+;
+; 1. Directed checks: run budgets, HLT, RST injection, the EI delay, DI, port
+;    hooks, CpuYield, every PSW value through POP/PUSH PSW and through all
+;    eight conditions, undocumented opcodes, self-modifying code, the
+;    conditional CALL/RET timing, and (with #CPU_MEMMAP = 1) the page map.
+; 2. The CP/M diagnostics TST8080, 8080PRE, CPUTEST and 8080EXM under a BDOS
+;    stub, laid out as the reference harness does (OUT 0 at $0000 ends the
+;    program, OUT 1 / RET at $0005 is the BDOS), so the instruction count
+;    (untimed) or cycle count (timed) must equal the published reference.
+EnableExplicit
+XIncludeFile "RP2040/Lib/clocks.pico"
+XIncludeFile "RP2040/Lib/timer.pico"
+XIncludeFile "RP2040/Lib/uart.pico"
+XIncludeFile "RP2040/Lib/usb_serial.pico"
+XIncludeFile "RP2040/Lib/safety.pico"
+XIncludeFile "../src/i8080.pico"
+XIncludeFile "../src/io.pico"
+XIncludeFile "test_data.pico"
+
+#CAP_SIZE = 16384
+Global Dim Cap.a(#CAP_SIZE)
+Global CapLen.i, CapSent.i, CapLost.i
+Global CpmMode.i, Finished.i, LastPort.i, LastValue.i, YieldPort.i
+Global TrapReads.i, TrapWrites.i, LastTrapAdr.i, LastTrapVal.i
+Global Failures.i, Checks.i, I.i, J.i, P.i, Got.i, Want.i, WaitStart.i
+Global CountHi.i, CountLo.i, RunStart.i, RunUs.i, TotalFailures.i
+; The procedures that call into the core keep their working values in
+; Globals: r4 and r5 hold CpuHL and FR program-wide (PM1126).
+Global R.i, Taken.i, RunN.i, RunFrom.i, RunOk.i, RunWindow.i, StartPc.i
+Global *TestName, *TestImage, *TestPass, TestSize.i, RefHi.i, RefLo.i
+
+Procedure Emit(c.i)
+  If CapLen < #CAP_SIZE
+    Cap(CapLen) = c
+    CapLen = CapLen + 1
+  Else
+    CapLost = CapLost + 1
+  EndIf
+EndProcedure
+Procedure FlushCap()
+  While CapSent < CapLen
+    UsbSerialWrite(Cap(CapSent))
+    CapSent = CapSent + 1
+  Wend
+  UsbSerialFlush() : UsbSerialTask() : SafetyPet()
+EndProcedure
+
+Procedure.i CpuPortIn(port.i)
+  If CpmMode
+    ProcedureReturn 0
+  EndIf
+  ProcedureReturn port ! $5A
+EndProcedure
+Procedure CpuPortOut(port.i, value.i)
+  Protected adr.i
+  If CpmMode
+    If port = 0
+      Finished = 1
+      CpuYield = 1
+    ElseIf port = 1
+      If (CpuBC & 255) = 2
+        Emit(CpuDE & 255)
+      ElseIf (CpuBC & 255) = 9
+        adr = CpuDE
+        Repeat
+          Emit(M(adr))
+          adr = (adr + 1) & $FFFF
+        Until M(adr) = 36
+      EndIf
+    EndIf
+    ProcedureReturn
+  EndIf
+  LastPort = port : LastValue = value
+  If port = YieldPort
+    CpuYield = 1
+  EndIf
+EndProcedure
+CompilerIf #CPU_MEMMAP = 1
+Procedure.i CpuReadTrap(adr.i)
+  TrapReads = TrapReads + 1
+  ProcedureReturn (adr & 255) ! $3C
+EndProcedure
+Procedure CpuWriteTrap(adr.i, value.i)
+  TrapWrites = TrapWrites + 1
+  LastTrapAdr = adr : LastTrapVal = value
+EndProcedure
+CompilerEndIf
+
+Procedure Check(ok.i, *what.i, got.i, want.i)
+  Checks = Checks + 1
+  If ok = 0
+    Failures = Failures + 1
+    If Failures <= 20
+      Say("  FAIL ") : Say(*what) : Say(" got=$") : Hex(got, 4) : Say(" want=$") : Hex(want, 4) : Eol()
+    EndIf
+  EndIf
+EndProcedure
+Procedure Load(adr.i, *bytes.i, n.i)
+  Protected k.i
+  For k = 0 To n - 1
+    M(adr + k) = PeekA(*bytes + k) & 255
+  Next
+EndProcedure
+Procedure Start(pc.i)
+  StartPc = pc
+  CpuReset() : CpuPC = StartPc : CpuSP = $F000
+EndProcedure
+; One instruction's budget: 1 instruction, or 1 cycle (the run then returns
+; that instruction's whole cycle count).
+Procedure.i One()
+  ProcedureReturn CpuRun(1)
+EndProcedure
+
+Procedure ApiChecks()
+  CpmMode = 0
+  For I = 0 To 255
+    CpuMemMap(I) = 3
+  Next
+  For I = 0 To 65535
+    M(I) = 0
+  Next
+  ; Budgets.
+  Start($100)
+  Check(Bool(CpuRun(0) = 0), "budget 0", 0, 0)
+  Check(Bool(CpuRun(-5) = 0), "budget -5", 0, 0)
+  Check(Bool(CpuPC = $100), "no instruction for budget 0", CpuPC, $100)
+  ; MVI B,10 / XRA A / ADD B / DCR B / JNZ / HLT: 33 instructions, 208 cycles.
+  Load($100, ?SumCode, 9)
+  Start($100)
+  R = CpuRun(1000)
+  Check(Bool(CpuA = 55), "sum A", CpuA, 55)
+  CompilerIf #CPU_TIMING = 1
+    Check(Bool(R = 1000), "HLT spends the timed window", R, 1000)
+    Check(Bool(CpuRun(10) = 10), "halted timed window", 0, 10)
+  CompilerElse
+    Check(Bool(R = 33), "sum instructions", R, 33)
+    Check(Bool(CpuRun(10) = 0), "halted runs nothing", 0, 0)
+  CompilerEndIf
+  Check(Bool(CpuHalted = 1 And CpuPC = $109), "HLT state", CpuPC, $109)
+  Check(Bool(CpuInterrupt($FF) = 0), "RST refused while DI", 0, 0)
+  ; Timed: one-cycle budgets run one instruction each; HLT charges its own 7.
+  CompilerIf #CPU_TIMING = 1
+    Start($100)
+    R = 0
+    While CpuHalted = 0 And R < 1000
+      R = R + One()
+    Wend
+    Check(Bool(R = 208), "sum cycles one at a time", R, 208)
+  CompilerEndIf
+  ; EI / HLT, then RST 7 wakes it and pushes the address after HLT.
+  M($200) = $FB : M($201) = $76
+  Start($200)
+  R = CpuRun(100)
+  Check(Bool(CpuHalted = 1 And CpuIE = 1), "EI;HLT halts enabled", CpuHalted, 1)
+  Check(Bool(CpuInterrupt($FF) = 11), "RST 7 accepted", 0, 11)
+  Check(Bool(CpuPC = $38 And CpuHalted = 0 And CpuIE = 0), "RST 7 state", CpuPC, $38)
+  Check(Bool(CpuSP = $EFFE And M($EFFE) = $02 And M($EFFF) = $02), "RST pushed $0202", M($EFFE) | (M($EFFF) << 8), $202)
+  ; EI delay: an interrupt is refused until one more instruction has run.
+  M($300) = $FB : M($301) = 0 : M($302) = 0
+  Start($300)
+  R = One()
+  Check(Bool(CpuIE = 1 And CpuInterrupt($CF) = 0), "refused right after EI", CpuPC, $301)
+  R = One()
+  Check(Bool(CpuInterrupt($CF) = 11 And CpuPC = 8), "accepted one instruction after EI", CpuPC, 8)
+  ; EI not at the end of a window: no delay remains.
+  M($340) = $FB : M($341) = 0 : M($342) = $76
+  Start($340)
+  R = CpuRun(100)
+  Check(Bool(CpuInterrupt($D7) = 11 And CpuPC = $10), "EI mid-window", CpuPC, $10)
+  ; Only RST opcodes are accepted.
+  Start($300)
+  CpuIE = 1
+  Check(Bool(CpuInterrupt($C3) = 0 And CpuInterrupt($100) = 0 And CpuIE = 1), "non-RST refused", 0, 0)
+  Check(Bool(CpuInterrupt($C7) = 11 And CpuPC = 0), "RST 0", CpuPC, 0)
+  ; DI.
+  M($310) = $FB : M($311) = 0 : M($312) = $F3 : M($313) = $76
+  Start($310)
+  R = CpuRun(100)
+  Check(Bool(CpuIE = 0 And CpuInterrupt($FF) = 0), "DI disables", CpuIE, 0)
+  ; IN / OUT through the hooks.
+  M($320) = $DB : M($321) = $42 : M($322) = $D3 : M($323) = $99 : M($324) = $76
+  Start($320)
+  R = CpuRun(100)
+  Check(Bool(CpuA = $18), "IN from hook", CpuA, $18)
+  Check(Bool(LastPort = $99 And LastValue = $18), "OUT to hook", LastPort, $99)
+  ; CpuYield from a hook ends the window after that instruction.
+  YieldPort = $77
+  M($330) = $D3 : M($331) = $77 : M($332) = 0 : M($333) = 0
+  Start($330)
+  R = CpuRun(100)
+  CompilerIf #CPU_TIMING = 1
+    Check(Bool(R = 10 And CpuPC = $332), "yield after OUT", R, 10)
+  CompilerElse
+    Check(Bool(R = 1 And CpuPC = $332), "yield after OUT", R, 1)
+  CompilerEndIf
+  YieldPort = -1
+  ; Every PSW value: CpuSetFlags/CpuFlags, and POP PSW / PUSH PSW in the guest.
+  M($400) = $F1 : M($401) = $F5 : M($402) = $76
+  For P = 0 To 255
+    Want = (P & $D5) | 2
+    CpuSetFlags(P)
+    Got = CpuFlags()
+    Check(Bool(Got = Want), "CpuFlags round trip", Got, Want)
+    Start($400)
+    CpuSP = $0FFE : M($0FFE) = P : M($0FFF) = $77
+    R = CpuRun(100)
+    Got = M($0FFE) | (M($0FFF) << 8)
+    Check(Bool(Got = (Want | $7700) And CpuA = $77 And CpuSP = $0FFE), "POP/PUSH PSW", Got, Want | $7700)
+    ; Each condition under this PSW: Jcc, Ccc, Rcc.
+    For J = 0 To 7
+      Select J
+        Case 0 : Taken = Bool((P & $40) = 0)
+        Case 1 : Taken = Bool((P & $40) <> 0)
+        Case 2 : Taken = Bool((P & 1) = 0)
+        Case 3 : Taken = Bool((P & 1) <> 0)
+        Case 4 : Taken = Bool((P & 4) = 0)
+        Case 5 : Taken = Bool((P & 4) <> 0)
+        Case 6 : Taken = Bool((P & $80) = 0)
+        Default : Taken = Bool((P & $80) <> 0)
+      EndSelect
+      M($500) = $C2 | (J << 3) : M($501) = 0 : M($502) = 6
+      Start($500) : CpuSetFlags(P)
+      R = One()
+      If Taken
+        Check(Bool(CpuPC = $600), "Jcc Taken", (J << 8) | P, $600)
+      Else
+        Check(Bool(CpuPC = $503), "Jcc not Taken", (J << 8) | P, $503)
+      EndIf
+      CompilerIf #CPU_TIMING = 1
+        Check(Bool(R = 10), "Jcc cycles", R, 10)
+      CompilerEndIf
+      M($500) = $C4 | (J << 3)
+      Start($500) : CpuSetFlags(P)
+      R = One()
+      If Taken
+        Check(Bool(CpuPC = $600 And CpuSP = $EFFE And M($EFFE) = 3 And M($EFFF) = 5), "Ccc Taken", (J << 8) | P, $600)
+        CompilerIf #CPU_TIMING = 1
+          Check(Bool(R = 17), "Ccc Taken cycles", R, 17)
+        CompilerEndIf
+      Else
+        Check(Bool(CpuPC = $503 And CpuSP = $F000), "Ccc not Taken", (J << 8) | P, $503)
+        CompilerIf #CPU_TIMING = 1
+          Check(Bool(R = 11), "Ccc not Taken cycles", R, 11)
+        CompilerEndIf
+      EndIf
+      M($500) = $C0 | (J << 3)
+      Start($500) : CpuSetFlags(P)
+      CpuSP = $0FFE : M($0FFE) = $34 : M($0FFF) = $12
+      R = One()
+      If Taken
+        Check(Bool(CpuPC = $1234 And CpuSP = $1000), "Rcc Taken", (J << 8) | P, $1234)
+        CompilerIf #CPU_TIMING = 1
+          Check(Bool(R = 11), "Rcc Taken cycles", R, 11)
+        CompilerEndIf
+      Else
+        Check(Bool(CpuPC = $501 And CpuSP = $0FFE), "Rcc not Taken", (J << 8) | P, $501)
+        CompilerIf #CPU_TIMING = 1
+          Check(Bool(R = 5), "Rcc not Taken cycles", R, 5)
+        CompilerEndIf
+      EndIf
+      ; The flags are unchanged by the branch.
+      Check(Bool(CpuFlags() = Want), "flags kept by branch", CpuFlags(), Want)
+    Next
+  Next
+  ; Undocumented: $CB JMP, $DD CALL, $D9 RET, $08 NOP; $ED/$FD CALL, $10.. NOP.
+  M($800) = $CB : M($801) = $10 : M($802) = $08
+  M($810) = $DD : M($811) = $20 : M($812) = $08 : M($813) = $08 : M($814) = $ED : M($815) = $30 : M($816) = $08 : M($817) = $76
+  M($820) = $D9
+  M($830) = $FD : M($831) = $40 : M($832) = $08 : M($833) = $D9
+  M($840) = $10 : M($841) = $18 : M($842) = $20 : M($843) = $28 : M($844) = $30 : M($845) = $38 : M($846) = $D9
+  Start($800)
+  R = CpuRun(100)
+  Check(Bool(CpuHalted = 1 And CpuPC = $818 And CpuSP = $F000), "undocumented opcodes", CpuPC, $818)
+  CompilerIf #CPU_TIMING = 0
+    Check(Bool(R = 15), "undocumented instruction count", R, 15)
+  CompilerEndIf
+  ; Self-modifying code: STA writes INR A over the NOP that follows.
+  M($700) = $3E : M($701) = $3C : M($702) = $32 : M($703) = $05 : M($704) = $07 : M($705) = 0 : M($706) = $76
+  Start($700)
+  R = CpuRun(100)
+  Check(Bool(CpuA = $3D And CpuPC = $707), "self-modifying code", CpuA, $3D)
+  ; XTHL, XCHG, SHLD/LHLD wrapping at $FFFF, SPHL, PCHL.
+  Load($900, ?PairCode, 25)
+  M($920) = $76
+  M($A00) = $11 : M($A01) = $22
+  Start($900)
+  R = CpuRun(100)
+  Check(Bool(CpuDE = $2211 And M($A00) = $CD And M($A01) = $AB), "XTHL/XCHG", CpuDE, $2211)
+  Check(Bool(M($FFFF) = $66 And M(0) = $55), "SHLD wraps", M(0), $55)
+  Check(Bool(CpuSP = $5566 And CpuHL = $0920 And CpuPC = $921), "LHLD wraps, SPHL, PCHL", CpuSP, $5566)
+  CompilerIf #CPU_MEMMAP = 1
+    ; Page $80 is trapped both ways; page $81 is ROM: read directly, writes trapped.
+    CpuMemMap($80) = 0 : CpuMemMap($81) = 1
+    M($8110) = $AB : M($8034) = $EE
+    M($B00) = $3A : M($B01) = $34 : M($B02) = $80      ; LDA $8034 (trap)
+    M($B03) = $32 : M($B04) = $10 : M($B05) = $81      ; STA $8110 (ROM: trap)
+    M($B06) = $3A : M($B07) = $10 : M($B08) = $81      ; LDA $8110 (direct)
+    M($B09) = $21 : M($B0A) = $00 : M($B0B) = $80      ; LXI H,$8000
+    M($B0C) = $34                                       ; INR M (trap read, trap write)
+    M($B0D) = $76
+    TrapReads = 0 : TrapWrites = 0
+    Start($B00)
+    R = CpuRun(100)
+    Check(Bool(CpuA = $AB And M($8110) = $AB), "ROM page read direct, write refused", CpuA, $AB)
+    Check(Bool(TrapReads = 2 And TrapWrites = 2), "trap counts", (TrapReads << 8) | TrapWrites, $202)
+    Check(Bool(LastTrapAdr = $8000 And LastTrapVal = $3D), "INR M through traps", LastTrapVal, $3D)
+    CpuMemMap($80) = 3 : CpuMemMap($81) = 3
+  CompilerEndIf
+  Say("API/interrupt/flag checks=") : Num(Checks) : Say(" failures=") : Num(Failures)
+  If Failures = 0
+    Say(" PASS")
+  Else
+    Say(" FAIL")
+  EndIf
+  Eol()
+  TotalFailures = TotalFailures + Failures
+EndProcedure
+
+; Does the capture from 'from' on contain the text?
+Procedure.i Contains(from.i, *text.i)
+  Protected k.i, n.i, ok.i
+  n = 0
+  While PeekA(*text + n) & 255
+    n = n + 1
+  Wend
+  For k = from To CapLen - n
+    ok = 1
+    For J = 0 To n - 1
+      If Cap(k + J) <> (PeekA(*text + J) & 255)
+        ok = 0
+        Break
+      EndIf
+    Next
+    If ok
+      ProcedureReturn 1
+    EndIf
+  Next
+  ProcedureReturn 0
+EndProcedure
+Procedure Num64(hi.i, lo.i)
+  Protected d.i
+  If hi = 0
+    Num(lo)
+    ProcedureReturn
+  EndIf
+  Num(hi)
+  d = 100000000
+  While d > 0
+    UsbSerialWrite(48 + (lo / d) % 10)
+    d = d / 10
+  Wend
+EndProcedure
+
+; Runs one CP/M program; the count must equal RefHi * 1e9 + RefLo.
+Procedure RunCpm()
+  For I = 0 To 65535
+    M(I) = 0
+  Next
+  Load($100, *TestImage, TestSize)
+  M(0) = $D3 : M(1) = 0
+  M(5) = $D3 : M(6) = 1 : M(7) = $C9
+  CpmMode = 1 : Finished = 0
+  CpuReset() : CpuPC = $100
+  CountHi = 0 : CountLo = 0
+  RunFrom = CapLen
+  Say("*** ") : Say(*TestName) : Eol()
+  CompilerIf #CPU_TIMING = 1
+    RunWindow = 4000000
+  CompilerElse
+    RunWindow = 1000000
+  CompilerEndIf
+  RunStart = Micros()
+  While Finished = 0
+    RunN = CpuRun(RunWindow)
+    CountLo = CountLo + RunN
+    If CountLo >= 1000000000
+      CountLo = CountLo - 1000000000
+      CountHi = CountHi + 1
+    EndIf
+    FlushCap()
+    If CpuHalted Or RunN = 0 Or CountHi > RefHi
+      Break
+    EndIf
+    If CountHi = RefHi And CountLo > RefLo + 50000000
+      Break
+    EndIf
+  Wend
+  RunUs = Micros() - RunStart
+  FlushCap()
+  Eol()
+  RunOk = Bool(Finished = 1 And Contains(RunFrom, *TestPass) = 1 And Contains(RunFrom, "ERROR") = 0 And CapLost = 0)
+  Say(*TestName)
+  If RunOk
+    Say(" output PASS")
+  Else
+    Say(" output FAIL")
+  EndIf
+  CompilerIf #CPU_TIMING = 1
+    Say(" cycles=")
+  CompilerElse
+    Say(" instructions=")
+  CompilerEndIf
+  Num64(CountHi, CountLo) : Say(" reference=") : Num64(RefHi, RefLo)
+  If CountHi = RefHi And CountLo = RefLo
+    Say(" count PASS")
+  Else
+    Say(" count FAIL")
+    RunOk = 0
+  EndIf
+  Say(" ms=") : Num(RunUs / 1000)
+  Eol()
+  If RunOk = 0
+    TotalFailures = TotalFailures + 1
+  EndIf
+EndProcedure
+
+Procedure Main()
+  SafetyBoot()
+  ClockInitKhz(#CLOCK_KHZ)
+  TimerInit()
+  UsbSerialInit()
+  WaitStart = Micros()
+  While UsbSerialReady() = 0
+    UsbSerialTask() : SafetyPet()
+    If Micros() - WaitStart > 30000000
+      Break
+    EndIf
+  Wend
+  WaitUs(200000)
+  Say("8080 verification clk_sys kHz=") : Num(ClockSysKhz())
+  Say(" timing=") : Num(#CPU_TIMING) : Say(" asm_tail=") : Num(#CPU_ASM_TAIL) : Say(" memmap=") : Num(#CPU_MEMMAP)
+  Eol()
+  ApiChecks()
+  ; Published reference counts (superzazu/8080 test harness, same layout).
+  CompilerIf #CPU_TIMING = 1
+    *TestName = "TST8080" : *TestImage = ?Tst8080 : TestSize = #TST8080_SIZE : *TestPass = "CPU IS OPERATIONAL" : RefHi = 0 : RefLo = 4924 : RunCpm()
+    *TestName = "8080PRE" : *TestImage = ?Pre8080 : TestSize = #PRE8080_SIZE : *TestPass = "8080 Preliminary tests complete" : RefHi = 0 : RefLo = 7817 : RunCpm()
+    *TestName = "CPUTEST" : *TestImage = ?Cputest : TestSize = #CPUTEST_SIZE : *TestPass = "CPU TESTS OK" : RefHi = 0 : RefLo = 255653383 : RunCpm()
+    *TestName = "8080EXM" : *TestImage = ?Exm8080 : TestSize = #EXM8080_SIZE : *TestPass = "Tests complete" : RefHi = 23 : RefLo = 803381171 : RunCpm()
+  CompilerElse
+    *TestName = "TST8080" : *TestImage = ?Tst8080 : TestSize = #TST8080_SIZE : *TestPass = "CPU IS OPERATIONAL" : RefHi = 0 : RefLo = 651 : RunCpm()
+    *TestName = "8080PRE" : *TestImage = ?Pre8080 : TestSize = #PRE8080_SIZE : *TestPass = "8080 Preliminary tests complete" : RefHi = 0 : RefLo = 1061 : RunCpm()
+    *TestName = "CPUTEST" : *TestImage = ?Cputest : TestSize = #CPUTEST_SIZE : *TestPass = "CPU TESTS OK" : RefHi = 0 : RefLo = 33971311 : RunCpm()
+    *TestName = "8080EXM" : *TestImage = ?Exm8080 : TestSize = #EXM8080_SIZE : *TestPass = "Tests complete" : RefHi = 2 : RefLo = 919050698 : RunCpm()
+  CompilerEndIf
+  Say("verification complete failures=") : Num(TotalFailures)
+  If TotalFailures = 0
+    Say(" PASS")
+  Else
+    Say(" FAIL")
+  EndIf
+  Eol()
+  Repeat
+    WaitUs(1000000)
+  ForEver
+EndProcedure
+
+DataSection
+SumCode:
+  Data.a $06,10, $AF, $80, $05, $C2,$03,$01, $76
+PairCode:
+  Data.a $21,$CD,$AB, $31,$00,$0A, $E3, $11,$66,$55, $EB, $22,$FF,$FF, $21,$00,$00, $2A,$FF,$FF, $F9, $21,$20,$09, $E9
+EndDataSection
