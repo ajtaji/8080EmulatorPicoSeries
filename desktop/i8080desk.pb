@@ -5,15 +5,18 @@
 ;   & 'C:\Program Files\PureBasic\Compilers\pbcompilerc.exe' i8080desk.pb /THREAD /DPIAWARE /OPTIMIZER `
 ;       /CONSTANT GL_ENGINE_DIR$=C:/Users/ajtaj/Desktop/Neon-Arcade-Dispay-Engine/ /EXE i8080desk.exe
 ;
-; Command line: a .COM file to load, or --selftest (run the four diagnostics in
-; the window, save desktop\selftest.png and the verdicts to desktop\selftest.log,
-; then close).
+; Command line: a .COM file or a machine ROM to load; --selftest (run the four
+; diagnostics in the window, save desktop\selftest.png and the verdicts to
+; desktop\selftest.log, then close); --machine-selftest (run the Space Invaders
+; test ROM 150 frames with "right" held for 30 of them, save
+; desktop\machine-selftest.png and .log, then close).
 
 CompilerIf Defined(GL_ENGINE_DIR$, #PB_Constant) = 0
   #GL_ENGINE_DIR$ = "C:/Users/ajtaj/Desktop/Neon-Arcade-Dispay-Engine/"
 CompilerEndIf
 #CPU_DISPATCH = 0          ; computed goto: measured fastest on the PC
-XIncludeFile "cpm.pbi"
+XIncludeFile "machine.pbi"
+XIncludeFile "audio.pbi"
 IncludePath #GL_ENGINE_DIR$
 XIncludeFile "GlTypes.pbi"
 XIncludeFile "GlUtilities.pbi"
@@ -35,6 +38,8 @@ Global Dim Mn$(255)
 Global Dim OpLen.i(255)
 Global NewList Results$()
 Global Folder$
+Global *ScreenTex.GLSprite, *ScreenBuf, MachineAcc.f, MachineMs.q, MachineSelfTest.i, MachineFramesRun.i
+Declare MachineSlice()
 
 Procedure InitDisasm()
   Protected i.i, n.a
@@ -89,12 +94,16 @@ Procedure StartSuite(i.i)
     ProcedureReturn
   EndIf
   SuiteStartMs = ElapsedMilliseconds()
-  Running = #True : RightTab = 0
+  Running = #True : RightTab = 1
 EndProcedure
 
 ; Runs the guest for about `ms` milliseconds of host time.
 Procedure RunSlice(ms.i)
   Protected t0.q = ElapsedMilliseconds(), before.q = CpuInstr, n.i
+  If Machine = #MACHINE_INVADERS
+    MachineSlice()
+    ProcedureReturn
+  EndIf
   While Running And ElapsedMilliseconds() - t0 < ms
     If Breakpoint >= 0
       ; Instruction by instruction, so the stop lands exactly on the address.
@@ -124,6 +133,71 @@ Procedure RunSlice(ms.i)
   If SuiteIndex >= 0 And Running = #False And (CpmFinished Or CpuHalted)
     AddElement(Results$()) : Results$() = Verdict(SuiteIndex)
     StartSuite(SuiteIndex + 1)
+  EndIf
+EndProcedure
+
+; The machine test ROM: machine\invaders_test.rom beside Diagnostics.
+Procedure.s MachineTestRom()
+  Protected d$ = Left(Folder$, Len(Folder$) - 1)       ; ...\Diagnostics\upstream
+  d$ = GetPathPart(d$)                                 ; ...\Diagnostics\
+  d$ = GetPathPart(Left(d$, Len(d$) - 1))              ; the repository
+  ProcedureReturn d$ + "machine\invaders_test.rom"
+EndProcedure
+
+Procedure LoadMachine(path$, name$)
+  If InvLoadRom(path$)
+    LoadedName$ = name$ : RunCycles = 0 : SuiteIndex = -1 : RightTab = 0
+    MachineAcc = 0 : MachineMs = ElapsedMilliseconds() : MachineFramesRun = 0
+    Running = #True
+    Status$ = "Space Invaders hardware: " + name$ + " - arrows move, Space fires, 1/2 start, C coin"
+  Else
+    Status$ = "Cannot read the ROM " + path$ + " (one file up to 8 KB, or a folder with invaders.h/g/f/e)"
+  EndIf
+EndProcedure
+
+; The cabinet's controls, read while the window has the focus.
+Procedure MachineInputs()
+  Protected v.i
+  If GetActiveWindow() = Win
+    If GetAsyncKeyState_(#VK_LEFT) & $8000 : v | #INV_P1LEFT : EndIf
+    If GetAsyncKeyState_(#VK_RIGHT) & $8000 : v | #INV_P1RIGHT : EndIf
+    If GetAsyncKeyState_(#VK_SPACE) & $8000 : v | #INV_P1FIRE : EndIf
+    If GetAsyncKeyState_(#VK_1) & $8000 : v | #INV_P1START : EndIf
+    If GetAsyncKeyState_(#VK_2) & $8000 : v | #INV_P2START : EndIf
+    If GetAsyncKeyState_(#VK_C) & $8000 : v | #INV_COIN : EndIf
+  EndIf
+  InvIn1 = v
+EndProcedure
+
+Procedure MachineFrame()
+  InvRunFrame()
+  RunCycles + #INV_FRAME_CYCLES
+  MachineFramesRun + 1
+  If MachineSelfTest = 0 : AudioPush() : EndIf
+EndProcedure
+
+; 60 frames a second of host time; at most four frames to catch up. The
+; self-test runs two frames a drawn frame, with "right" held for frames 30-59.
+Procedure MachineSlice()
+  Protected now.q = ElapsedMilliseconds(), n.i, before.q = CpuInstr
+  If MachineSelfTest
+    For n = 1 To 2
+      InvIn1 = Bool(MachineFramesRun >= 30 And MachineFramesRun < 60) * #INV_P1RIGHT
+      MachineFrame()
+    Next
+    ProcedureReturn
+  EndIf
+  MachineInputs()
+  MachineAcc + (now - MachineMs) : MachineMs = now
+  If MachineAcc > 100 : MachineAcc = 100 : EndIf
+  While MachineAcc >= 1000.0 / 60 And n < 4
+    MachineFrame() : n + 1
+    MachineAcc - 1000.0 / 60
+  Wend
+  SpeedInstr + (CpuInstr - before) : SpeedMs + (n * 1000) / 60
+  If SpeedMs >= 1000
+    SpeedShown$ = "60 frames/s, guest " + StrF(SpeedInstr / (SpeedMs * 1000.0), 2) + " M instructions/s"
+    SpeedInstr = 0 : SpeedMs = 0
   EndIf
 EndProcedure
 
@@ -290,6 +364,59 @@ Procedure ResultsPane(x.f, y.f, w.f, h.f)
   EndIf
 EndProcedure
 
+Procedure ScreenInit()
+  *ScreenBuf = AllocateMemory(224 * 256 * 4)
+  *ScreenTex = AllocateMemory(SizeOf(GLSprite))
+  *ScreenTex\Width = 224 : *ScreenTex\Height = 256
+  glGenTextures_(1, @*ScreenTex\TextureID)
+  glBindTexture_(#GL_TEXTURE_2D, *ScreenTex\TextureID)
+  glTexParameteri_(#GL_TEXTURE_2D, #GL_TEXTURE_MIN_FILTER, #GL_NEAREST)
+  glTexParameteri_(#GL_TEXTURE_2D, #GL_TEXTURE_MAG_FILTER, #GL_NEAREST)
+  glTexParameteri_(#GL_TEXTURE_2D, #GL_TEXTURE_WRAP_S, #GL_CLAMP_TO_EDGE)
+  glTexParameteri_(#GL_TEXTURE_2D, #GL_TEXTURE_WRAP_T, #GL_CLAMP_TO_EDGE)
+  glTexImage2D_(#GL_TEXTURE_2D, 0, #GL_RGBA, 224, 256, 0, #GL_BGRA_EXT, #GL_UNSIGNED_BYTE, *ScreenBuf)
+EndProcedure
+
+Procedure ScreenPane(x.f, y.f, w.f, h.f)
+  Protected s.f = Scale, k.i, sx.f, sy.f, lh.f = GLFontLineHeight(*Neon_FontSmall) + 4 * s, ty.f
+  If Neon_Button(x + 10 * s, y + 6 * s, 150 * s, 28 * s, "Machine test ROM", Bool(InvLoaded$ = MachineTestRom() And Machine = #MACHINE_INVADERS))
+    LoadMachine(MachineTestRom(), "invaders_test.rom")
+  EndIf
+  Neon_Text(*Neon_FontSmall, x + 172 * s, y + 12 * s, "Space Invaders (Taito 8080) hardware. Open... loads a ROM: 8 KB, or a folder of invaders.h/g/f/e",
+            Neon_C_DimR, Neon_C_DimG, Neon_C_DimB)
+  If Machine <> #MACHINE_INVADERS
+    Neon_Text(*Neon_FontUI, x + 14 * s, y + 60 * s, "No machine ROM loaded.", Neon_C_FaintR, Neon_C_FaintG, Neon_C_FaintB)
+    ProcedureReturn
+  EndIf
+  InvRender(*ScreenBuf)
+  glBindTexture_(#GL_TEXTURE_2D, *ScreenTex\TextureID)
+  glTexSubImage2D_(#GL_TEXTURE_2D, 0, 0, 0, 224, 256, #GL_BGRA_EXT, #GL_UNSIGNED_BYTE, *ScreenBuf)
+  k = Int((h - 60 * s) / 256)
+  If Int((w - 280 * s) / 224) < k : k = Int((w - 280 * s) / 224) : EndIf
+  If k < 1 : k = 1 : EndIf
+  sx = x + 14 * s : sy = y + 44 * s
+  Neon_Box(sx - 2, sy - 2, 224 * k + 4, 256 * k + 4, 0.0, 0.0, 0.0)
+  DrawGLSprite(*ScreenTex, sx, sy, 0.0, k, 1.0, 1.0, 1.0, 1.0, #True, -1.0, -1.0, -1.0, -1.0, #True)
+  ; Beside the screen: the machine's state.
+  ty = sy
+  sx + 224 * k + 24 * s
+  Neon_Text(*Neon_FontMono, sx, ty, "frame " + Str(InvFrames), Neon_C_TextR, Neon_C_TextG, Neon_C_TextB) : ty + lh
+  Neon_Text(*Neon_FontMono, sx, ty, "IN 1  " + RSet(Bin(InvPortIn(1)), 8, "0"), Neon_C_TextR, Neon_C_TextG, Neon_C_TextB) : ty + lh
+  Neon_Text(*Neon_FontMono, sx, ty, "OUT 3 " + RSet(Bin(InvSound3 & 255), 8, "0"), Neon_C_TextR, Neon_C_TextG, Neon_C_TextB) : ty + lh
+  Neon_Text(*Neon_FontMono, sx, ty, "OUT 5 " + RSet(Bin(InvSound5 & 255), 8, "0"), Neon_C_TextR, Neon_C_TextG, Neon_C_TextB) : ty + lh
+  Neon_Text(*Neon_FontMono, sx, ty, "shift " + H4(InvShift) + " >> " + Str(8 - InvShiftAmt), Neon_C_TextR, Neon_C_TextG, Neon_C_TextB) : ty + lh * 1.5
+  For k = 0 To 3
+    Neon_Text(*Neon_FontMono, sx, ty, "tone " + Str(k) + "  " + StrF(62500.0 / (InvTones(k)\Period + 1), 0) + " Hz  vol " + Str(InvTones(k)\Volume) +
+              "  " + StringField("square|pulse|triangle|noise", InvTones(k)\Wave + 1, "|"), Neon_C_GrnR, Neon_C_GrnG, Neon_C_GrnB) : ty + lh
+  Next
+  ty + lh
+  Neon_Text(*Neon_FontSmall, sx, ty, "arrows move, Space fires", Neon_C_DimR, Neon_C_DimG, Neon_C_DimB) : ty + lh
+  Neon_Text(*Neon_FontSmall, sx, ty, "1 / 2 start, C coin", Neon_C_DimR, Neon_C_DimG, Neon_C_DimB) : ty + lh
+  If AudioOk = 0
+    Neon_Text(*Neon_FontSmall, sx, ty, "sound off", Neon_C_FaintR, Neon_C_FaintG, Neon_C_FaintB)
+  EndIf
+EndProcedure
+
 Procedure DrawFrame()
   Protected s.f = Scale, bx.f, by.f, bw.f = 96 * s, bh.f = 30 * s, i.i, colW.f, top.f, half.f, sel.i
   Protected f$
@@ -297,14 +424,21 @@ Procedure DrawFrame()
   Neon_Box(0, 0, CanvasW, 48 * s, Neon_C_HeadR, Neon_C_HeadG, Neon_C_HeadB)
   Neon_Text(*Neon_FontBold, 14 * s, 14 * s, "INTEL 8080", Neon_C_AccR, Neon_C_AccG, Neon_C_AccB)
   bx = 120 * s : by = 9 * s
-  If Neon_Button(bx, by, bw, bh, "Open .COM")
-    f$ = OpenFileRequester("Load a CP/M program", Folder$, "CP/M program (*.com)|*.com;*.COM|All files|*.*", 0)
-    If f$ : SuiteIndex = -1 : LoadProgram(f$, GetFilePart(f$)) : EndIf
+  If Neon_Button(bx, by, bw, bh, "Open...")
+    f$ = OpenFileRequester("Load a CP/M program or a machine ROM", Folder$, "CP/M program (*.com)|*.com;*.COM|Machine ROM (*.rom, *.bin)|*.rom;*.bin|All files|*.*", 0)
+    If f$
+      SuiteIndex = -1
+      If LCase(GetExtensionPart(f$)) = "com"
+        LoadProgram(f$, GetFilePart(f$)) : RightTab = 1
+      Else
+        LoadMachine(f$, GetFilePart(f$))
+      EndIf
+    EndIf
   EndIf
   bx + bw + 6 * s
   For i = 0 To 3
     If Neon_Button(bx, by, 84 * s, bh, CpmTests(i)\Name$, Bool(LoadedName$ = CpmTests(i)\Name$))
-      SuiteIndex = -1 : LoadProgram(Folder$ + CpmTests(i)\File$, CpmTests(i)\Name$)
+      SuiteIndex = -1 : LoadProgram(Folder$ + CpmTests(i)\File$, CpmTests(i)\Name$) : RightTab = 1
     EndIf
     bx + 90 * s
   Next
@@ -330,7 +464,11 @@ Procedure DrawFrame()
   bx + 86 * s
   If Neon_Button(bx, by, 70 * s, bh, "Reset", #False, Bool(LoadedName$ <> ""))
     SuiteIndex = -1
-    If LoadedName$ <> "" And FindString(CpmLoaded$, ".") : LoadProgram(CpmLoaded$, LoadedName$) : EndIf
+    If Machine = #MACHINE_INVADERS
+      LoadMachine(InvLoaded$, LoadedName$)
+    ElseIf LoadedName$ <> "" And FindString(CpmLoaded$, ".")
+      LoadProgram(CpmLoaded$, LoadedName$)
+    EndIf
   EndIf
   bx + 84 * s
   Neon_Text(*Neon_FontUI, bx, by + 6 * s, "Break at", Neon_C_DimR, Neon_C_DimG, Neon_C_DimB)
@@ -345,11 +483,12 @@ Procedure DrawFrame()
   RegistersPane(8 * s, top, colW, 300 * s)
   DisasmPane(8 * s, top + 308 * s, colW, CanvasH - top - 308 * s - 40 * s)
   Neon_Panel(colW + 16 * s, top, CanvasW - colW - 24 * s, CanvasH - top - 40 * s, "", Neon_C_AccR, Neon_C_AccG, Neon_C_AccB)
-  sel = Neon_TabStrip(300, colW + 17 * s, top + 1, CanvasW - colW - 26 * s, 30 * s, "Console|Memory|Suite results", RightTab)
+  sel = Neon_TabStrip(300, colW + 17 * s, top + 1, CanvasW - colW - 26 * s, 30 * s, "Screen|Console|Memory|Suite results", RightTab)
   If sel <> RightTab : RightTab = sel : EndIf
   Select RightTab
-    Case 0 : ConsolePane(colW + 16 * s, top + 34 * s, CanvasW - colW - 24 * s, CanvasH - top - 78 * s)
-    Case 1 : MemoryPane(colW + 16 * s, top + 34 * s, CanvasW - colW - 24 * s, CanvasH - top - 78 * s)
+    Case 0 : ScreenPane(colW + 16 * s, top + 34 * s, CanvasW - colW - 24 * s, CanvasH - top - 78 * s)
+    Case 1 : ConsolePane(colW + 16 * s, top + 34 * s, CanvasW - colW - 24 * s, CanvasH - top - 78 * s)
+    Case 2 : MemoryPane(colW + 16 * s, top + 34 * s, CanvasW - colW - 24 * s, CanvasH - top - 78 * s)
     Default : ResultsPane(colW + 16 * s, top + 34 * s, CanvasW - colW - 24 * s, CanvasH - top - 78 * s)
   EndSelect
   ; Status line.
@@ -386,12 +525,22 @@ Procedure Main()
   Neon_UIScale = Scale
   BuildFonts()
   SizeCanvas()
+  ScreenInit()
   If LCase(arg$) = "--selftest"
     SelfTest = #True
     StartSuite(0)
+  ElseIf LCase(arg$) = "--machine-selftest"
+    MachineSelfTest = #True
+    LoadMachine(MachineTestRom(), "invaders_test.rom")
   ElseIf arg$ <> ""
-    LoadProgram(arg$, GetFilePart(arg$))
+    AudioOpen()
+    If LCase(GetExtensionPart(arg$)) = "com"
+      LoadProgram(arg$, GetFilePart(arg$)) : RightTab = 1
+    Else
+      LoadMachine(arg$, GetFilePart(arg$))
+    EndIf
   Else
+    AudioOpen()
     LoadProgram(Folder$ + CpmTests(0)\File$, CpmTests(0)\Name$)
   EndIf
   LastMs = ElapsedMilliseconds()
@@ -428,7 +577,17 @@ Procedure Main()
     Neon_ChromeEndFrame()
     If SelfTest And SuiteIndex = -1 And SelfTestDone = 0
       SelfTestDone = 1
-      RightTab = 2                      ; draw the results tab once more, then capture it
+      RightTab = 3                      ; draw the results tab once more, then capture it
+    ElseIf SelfTestDone = 1 And MachineSelfTest
+      SaveScreenshot(GetPathPart(ProgramFilename()) + "machine-selftest.png")
+      log = CreateFile(#PB_Any, GetPathPart(ProgramFilename()) + "machine-selftest.log")
+      If log
+        WriteStringN(log, "frames=" + Str(InvFrames) + " RST1=" + Str(M($2000)) + " RST2=" + Str(M($2001)) + " frame=" + Str(M($2002)) +
+                          " sprite=" + Str(M($2003)) + " shift=" + Str(M($2010)) + "," + Str(M($2011)) + "," + Str(M($2012)) + "," + Str(M($2013)) +
+                          " tone0 period=" + Str(InvTones(0)\Period) + " volume=" + Str(InvTones(0)\Volume))
+        CloseFile(log)
+      EndIf
+      Quit = #True
     ElseIf SelfTestDone = 1
       SaveScreenshot(GetPathPart(ProgramFilename()) + "selftest.png")
       log = CreateFile(#PB_Any, GetPathPart(ProgramFilename()) + "selftest.log")
@@ -438,8 +597,13 @@ Procedure Main()
       EndIf
       Quit = #True
     EndIf
+    If MachineSelfTest And MachineFramesRun >= 150 And SelfTestDone = 0
+      SelfTestDone = 1                  ; one more frame drawn, then captured
+      Running = #False
+    EndIf
     SetGadgetAttribute(Gl, #PB_OpenGL_FlipBuffers, #True)
     If Running = 0 : Delay(10) : EndIf
   Until Quit
+  AudioClose()
 EndProcedure
 Main()

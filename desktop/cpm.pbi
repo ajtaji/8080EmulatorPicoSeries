@@ -3,16 +3,7 @@
 ; (OUT 0 at $0000 ends the program; OUT 1 / RET at $0005 is the BDOS: C = 2
 ; prints E, C = 9 prints from DE up to '$').
 ;
-; Include order: this file declares the port hooks, then includes the core.
-
-CompilerIf Defined(CPU_DISPATCH, #PB_Constant) = 0
-  #CPU_DISPATCH = 0
-CompilerEndIf
-#CPU_MEMMAP = 0
-
-Declare.i CpuPortIn(port.i)
-Declare CpuPortOut(port.i, value.i)
-XIncludeFile "i8080core.pbi"
+; Included by machine.pbi, which owns the core's hooks and calls these.
 
 Global CpmOut$, CpmFinished.i, CpmLoaded$, CpmPortLog.i
 
@@ -46,10 +37,10 @@ Procedure CpmEmit(c.i)
   CpmOut$ + Chr(c)
 EndProcedure
 
-Procedure.i CpuPortIn(port.i)
+Procedure.i CpmPortIn(port.i)
   ProcedureReturn 0
 EndProcedure
-Procedure CpuPortOut(port.i, value.i)
+Procedure CpmPortOut(port.i, value.i)
   Protected adr.i
   If port = 0
     CpmFinished = 1
@@ -86,6 +77,7 @@ Procedure.i CpmLoad(file$)
   CloseFile(f)
   M(0) = $D3 : M(1) = 0
   M(5) = $D3 : M(6) = 1 : M(7) = $C9
+  MachineSelect(#MACHINE_CPM)
   CpuReset()
   CpuPC = $100
   CpmOut$ = "" : CpmFinished = 0 : CpmLoaded$ = file$

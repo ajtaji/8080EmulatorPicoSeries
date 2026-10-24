@@ -1,7 +1,8 @@
 ; Console verification and benchmark of the desktop 8080 core.
 ;   pbcompilerc verify_desktop.pb /CONSOLE /OPTIMIZER /EXE verify_desktop.exe [/CONSTANT CPU_DISPATCH=1]
 ; Prints every verdict; exit code 0 only when everything passed.
-XIncludeFile "cpm.pbi"
+XIncludeFile "machine.pbi"
+XIncludeFile "../machine/invaders_test_expect.pbi"
 
 Global Failures.i, Checks.i
 
@@ -29,6 +30,7 @@ EndProcedure
 
 Procedure ApiChecks()
   Protected r.i, p.i, j.i, want.i, got.i, taken.i, i.i
+  MachineSelect(#MACHINE_CPM)
   For i = 0 To 65535 : M(i) = 0 : Next
   Start($100)
   Check(Bool(CpuRun(0) = 0 And CpuRun(-5) = 0 And CpuPC = $100), "budget 0 / negative")
@@ -164,6 +166,46 @@ Procedure.i RunTest(i.i, folder$)
   ProcedureReturn ok
 EndProcedure
 
+; The Space Invaders machine with its test ROM (tools/make_test_rom.py):
+; 120 frames, then RAM must hold the ROM's known results.
+Procedure.i MachineTest()
+  Protected rom$ = GetPathPart(CpmTestFolder()) , i.i, adr.l, v.l, ok.i = 1, t.q, c1.l, c2.l, c3.l
+  rom$ = GetPathPart(Left(rom$, Len(rom$) - 1))
+  rom$ = GetPathPart(Left(rom$, Len(rom$) - 1)) + "machine\invaders_test.rom"
+  If InvLoadRom(rom$) = 0
+    PrintN("machine test FAIL: cannot read " + rom$ + " (run tools/make_test_rom.py)")
+    ProcedureReturn 0
+  EndIf
+  For i = 1 To 120 : InvRunFrame() : Next
+  Restore InvTestExpect
+  Repeat
+    Read.l adr : Read.l v
+    If adr < 0 : Break : EndIf
+    If M(adr) <> v
+      PrintN("  FAIL machine RAM $" + Hex(adr) + " = " + Str(M(adr)) + ", want " + Str(v)) : ok = 0
+    EndIf
+  ForEver
+  Restore InvTestCounters
+  Read.l c1 : Read.l c2 : Read.l c3
+  ; Interrupts come on mid-frame, so RST 1 may be one ahead of RST 2.
+  If M(c2) <> M(c3) Or M(c1) - M(c2) < 0 Or M(c1) - M(c2) > 1 Or M(c2) < 100
+    PrintN("  FAIL interrupt counters RST1=" + Str(M(c1)) + " RST2=" + Str(M(c2)) + " frames=" + Str(M(c3))) : ok = 0
+  EndIf
+  For i = 0 To 31
+    If M($2400 + i) <> $FF Or M($2400 + 223 * 32 + i) <> $FF
+      PrintN("  FAIL border column byte " + Str(i)) : ok = 0 : Break
+    EndIf
+  Next
+  ; Speed: frames of emulated machine per second of host time.
+  t = ElapsedMilliseconds()
+  For i = 1 To 6000 : InvRunFrame() : Next
+  t = ElapsedMilliseconds() - t
+  PrintN("machine test " + StringField("FAIL PASS", 1 + ok, " ") + " RST1=" + Str(M(c1)) + " RST2=" + Str(M(c2)) +
+         " shift=" + Str(M($2010)) + "," + Str(M($2011)) + "," + Str(M($2012)) + "," + Str(M($2013)) +
+         " sprite=" + Str(M($2003)) + "; 6000 frames in " + Str(t) + " ms")
+  ProcedureReturn ok
+EndProcedure
+
 Procedure Bench(name$, bytes$)
   Protected t.q, i.i
   Poke8080($100, bytes$)
@@ -185,12 +227,14 @@ For i = 0 To 3
   passed + RunTest(i, folder$)
 Next
 PrintN("CP/M diagnostics passed " + Str(passed) + " of 4")
+Define machineOk.i = MachineTest()
+MachineSelect(#MACHINE_CPM)
 For i = $4000 To $40FF : M(i) = (i & 255) ! $A5 : Next
 Bench("register/branch DCR/JNZ", "0D C2 00 01 C3 00 01")
 Bench("arithmetic ADI/XRI/RLC/RAR/ADD/DAA", "C6 01 EE 55 07 1F 80 27 C3 00 01")
 Bench("memory copy MOV/STAX/INX/DCR/JNZ", "21 00 40 11 00 50 0E 00 7E 12 23 13 0D C2 08 01 C3 00 01")
 Bench("call/stack CALL/PUSH/POP/RET", "31 00 F0 CD 10 01 C3 03 01 00 00 00 00 00 00 00 C5 E5 E1 C1 C9")
-If Failures = 0 And passed = 4
+If Failures = 0 And passed = 4 And machineOk
   PrintN("verification complete PASS")
   End 0
 EndIf
