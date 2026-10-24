@@ -5,7 +5,8 @@
 ;   & 'C:\Program Files\PureBasic\Compilers\pbcompilerc.exe' i8080desk.pb /THREAD /DPIAWARE /OPTIMIZER `
 ;       /CONSTANT GL_ENGINE_DIR$=C:/Users/ajtaj/Desktop/Neon-Arcade-Dispay-Engine/ /EXE i8080desk.exe
 ;
-; Command line: a .COM file or a machine ROM to load; --selftest (run the four
+; Command line: a .COM file or a machine ROM to load (add --mute for no sound,
+; anywhere on the line); --selftest (run the four
 ; diagnostics in the window, save desktop\selftest.png and the verdicts to
 ; desktop\selftest.log, then close); --machine-selftest (run the Space Invaders
 ; test ROM 150 frames with "right" held for 30 of them - or the ROM and frame
@@ -519,7 +520,11 @@ EndProcedure
 
 ; ---------------------------------------------------------------- main
 Procedure Main()
-  Protected ev.i, now.q, dt.f, arg$ = ProgramParameter(0), lib.i, fn.i, w.i = 1400, h.i = 880, down.b, log.i
+  Protected ev.i, now.q, dt.f, arg$ = ProgramParameter(0), lib.i, fn.i, w.i = 1400, h.i = 880, down.b, log.i, k.i, mute.i
+  For k = 0 To CountProgramParameters() - 1
+    If LCase(ProgramParameter(k)) = "--mute" : mute = #True : EndIf
+  Next
+  If LCase(arg$) = "--mute" : arg$ = ProgramParameter(1) : EndIf
   ; Per-monitor DPI awareness before any window exists.
   lib = OpenLibrary(#PB_Any, "user32.dll")
   If lib
@@ -564,14 +569,14 @@ Procedure Main()
       LoadMachine(MachineTestRom(), "invaders_test.rom")
     EndIf
   ElseIf arg$ <> ""
-    AudioOpen()
+    If mute = 0 : AudioOpen() : EndIf
     If LCase(GetExtensionPart(arg$)) = "com"
       LoadProgram(arg$, GetFilePart(arg$)) : RightTab = 1
     Else
       LoadMachine(arg$, GetFilePart(arg$))
     EndIf
   Else
-    AudioOpen()
+    If mute = 0 : AudioOpen() : EndIf
     LoadProgram(Folder$ + CpmTests(0)\File$, CpmTests(0)\Name$)
   EndIf
   ProfMark("loaded")
