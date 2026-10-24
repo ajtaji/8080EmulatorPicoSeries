@@ -4,8 +4,11 @@
 ; the board's four-note footsteps, a UFO patrols the sky, a cannon the
 ; ground, stars twinkle, a ticker types a message, and an original tune in
 ; A minor plays on the four tone channels.
+; (Built with the compiler at b86f45bd7 or later: its 16-bit unsigned
+; compares leave room for the arpeggio and let the main loop keep up with
+; every frame.)
 ;
-; Build as an .invaders file (compiler at 9fda90ac8 or later): the compiler
+; Build as an .invaders file (compiler at b86f45bd7 or later): the compiler
 ; writes the program ROMs invaders.h, .g, .f and .e in demo_roms\ beside the
 ; .hex. tools\build_demo.ps1 builds it and runs it headless. Run it on this
 ; repository's Space Invaders machine: the desktop window (Open... the
@@ -39,7 +42,7 @@ XIncludeFile "demo_assets.invaders"
 Global frame.a
 Global seen.u, loops.u, phase.u, i.u, v.u
 Global wipeX.u, textSrc.u, textX.u, textRow.u, textLine.u
-Global stepTick.u, tuneStep.u, melVol.u, drumVol.u, fleetNote.u, fleetOff.u
+Global stepTick.u, tuneStep.u, melVol.u, drumVol.u, arpIx.u, fleetNote.u, fleetOff.u
 Global tickX.u, tickPos.u
 ; What changes per object lives in RAM - its distance from its starting
 ; column (RAM starts at zero) and its direction (0 right) - the rest is read from ObjectTable
@@ -174,7 +177,8 @@ Procedure MusicStep()
 EndProcedure
 
 ; The tune's frame: the step every eighth frame, the lead's fade, the drums'
-; decay.
+; decay, and every second frame the arpeggio's next note (the chord's three
+; notes in turn).
 Procedure Music()
   If stepTick >= 8                     ; counted by RST2: real frames, even after a late pass
     stepTick = stepTick - 8
@@ -184,11 +188,18 @@ Procedure Music()
   i8080_out($12, melVol)
   If drumVol > 2 : drumVol = drumVol - 3 : Else : drumVol = 0 : EndIf
   i8080_out($1E, drumVol)
+  If (seen & 1) = 0
+    v = Word(?ArpPeriods + (((((tuneStep - 1) & 63) >> 4) * 3 + arpIx) << 1))
+    i8080_out($18, v & 255) : i8080_out($19, v >> 8)
+    arpIx = arpIx + 1
+    If arpIx = 3 : arpIx = 0 : EndIf
+  EndIf
 EndProcedure
 
 ; ---------------------------------------------------------------- the loop
 Procedure Begin()
   i8080_out($17, 2) : i8080_out($16, 13) : i8080_out($1F, 3)   ; a triangle bass at 13, noise drums
+  i8080_out($1B, 1) : i8080_out($1A, 4)                        ; a quiet pulse arpeggio
 EndProcedure
 
 Procedure Scene()

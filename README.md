@@ -227,17 +227,20 @@ Proven, 2026-10-23: the test ROM leaves exactly the same RAM on the desktop
 and on the Pico W (RST1 110, RST2 109, shift results 52 / 109 / 254 / 192,
 sprite 40 at frame 120). The Pico W keeps 60 machine frames and 60 panel
 frames a second, 48,000 sound samples a second, using 2.6 ms of core 0 a
-frame for the test ROM and 3.4 ms for the demo. The desktop sound path is
+frame for the test ROM and about 3.7 ms for the demo. The demo's music and
+effects were heard on the Bluetooth speaker with no underruns (130 packets a
+second). The desktop sound path is
 checked silently by `desktop/audio_check.exe`.
 
 ### The demo
 
-`demo/demo.invaders`, built with the compiler at 9fda90ac8 or later
+`demo/demo.invaders`, built with the compiler at b86f45bd7 or later
 (`tools/build_demo.ps1` builds it and runs it headless): the screen wipes in
 under a red PUREMETAL logo, the titles type themselves, then a formation of
 original aliens marches in a wave to the board's four-note footsteps, a UFO
 patrols the sky, a cannon the ground, a ticker types a message, and an
-original tune in A minor (square lead, triangle bass, noise drums) plays on
+original tune in A minor (square lead, triangle bass, pulse arpeggio, noise
+drums) plays on
 the tone device. Graphics, font and music are this project's own
 (`tools/make_demo_assets.py`).
 
@@ -246,13 +249,15 @@ moving one byte costs about 600 of them, so work is spread over frames as the
 original game does it (one alien a frame; the opening wipe one column a
 frame). The ROM is 8 KB and compiled statements cost 20-80 bytes each, so the
 scene is data - a table of moving objects run by one loop - and the music
-writes only the registers that change; the program fills the ROM to within
-12 bytes. Measured with `invaders_cli`: the main loop completes 92% of frames
-(the tune is clocked by the vertical-blank interrupt, so it keeps time; the
-objects count passes, so the formation never drifts).
+writes only the registers that change. The tune is clocked by the
+vertical-blank interrupt and the objects count main-loop passes, so neither
+drifts if a pass runs late. With the compiler's 16-bit unsigned compares
+(b86f45bd7, forum 1393) the program shrank by 766 bytes and its main loop
+completes every frame (2,999 passes in 3,000 frames, against 92% before);
+the room went to the arpeggio, leaving 136 bytes of the ROM free.
 
 The demo runs identically on the desktop and the Pico W: video RAM's
-checksum at frame 1200 is -1072003873 on both.
+checksum at frame 1200 is -2054358275 on both.
 
 ## Desktop version
 

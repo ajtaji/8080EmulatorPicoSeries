@@ -193,6 +193,7 @@ def main():
     out += data_lines('DrumLevel', [0, 14, 11])
     out += data_lines('MelodyPeriods', words(mel))
     out += data_lines('BassPeriods', words(bass))
+    out += data_lines('ArpPeriods', words(arp))
     out += data_lines('DrumSteps', DRUMS)
     out += ['MarqueeText:'] + [f'  Data.a ' + ', '.join(str(ord(c)) for c in MARQUEE[i:i + 24]) for i in range(0, len(MARQUEE), 24)]
     out += ['  Data.a 0']
