@@ -1,0 +1,87 @@
+; The machine's sound to a Bluetooth speaker: PureMetal's
+; Shared/Bluetooth/bt_audio.pmi (A2DP + SBC, 48 kHz) reads the machine's
+; sample ring itself (BtAudioSource). Core 0 connects (AudioBegin); core 1
+; drives the radio (AudioPoll). Follows the C64 emulator's audio module.
+;
+; The speaker's address comes from a PRIVATE wrapper (never in git) that
+; calls InvBluetoothSetPeer(?address) before InvMain(). Without one there is
+; no sound and nothing else changes. The link key is kept in the flash's last
+; sector behind "BTK1" - the record the NES, the C64 and the tone example use
+; for the same speaker - so it pairs once.
+#BT_KEY_FLASH = $1FF000
+#BT_LEAD_US = 65000
+Global Dim InvBtPeer.a(6)
+Global Dim InvKeyBuf.a(256)
+Global InvBtPeerSet.i, AudioRunning.i, AudioLive.i, AudioUnderruns.i, AudioPackets.i
+Global AudioLastPoll.i, AudioGap.i = 700, AudioLastRead.i
+Global Core1ParkRequest.i, Core1Parked.i
+
+; Six bytes in HCI order (least significant first), as the NES's wrapper keeps them.
+Procedure InvBluetoothSetPeer(src.i)
+  Protected i.i
+  For i = 0 To 5 : InvBtPeer(i) = PeekA(src + 5 - i) : Next
+  BtAudioStereo(1) : InvBtPeerSet = 1
+EndProcedure
+
+Procedure.i InvBtKeyAddr()
+  Protected k.i
+  k = $10000000 + #BT_KEY_FLASH
+  If PeekA(k) = 66 And PeekA(k + 1) = 84 And PeekA(k + 2) = 75 And PeekA(k + 3) = 49 : ProcedureReturn k + 4 : EndIf
+  ProcedureReturn 0
+EndProcedure
+
+Procedure.i InvSaveBtKey()
+  Protected i.i, start.i, ok.i
+  For i = 0 To 255 : InvKeyBuf(i) = 255 : Next
+  InvKeyBuf(0) = 66 : InvKeyBuf(1) = 84 : InvKeyBuf(2) = 75 : InvKeyBuf(3) = 49
+  If BtAudioKey(@InvKeyBuf(4)) = 0 : ProcedureReturn 0 : EndIf
+  Core1ParkRequest = 1 : start = Micros()
+  While PeekL(@Core1Parked) = 0
+    UsbSerialTask() : SafetyPet()
+    If Micros() - start > 1000000 : Core1ParkRequest = 0 : ProcedureReturn 0 : EndIf
+  Wend
+  ok = FlashRangeErase(#BT_KEY_FLASH, 4096)
+  If ok : ok = FlashRangeProgram(#BT_KEY_FLASH, @InvKeyBuf(0), 256) : EndIf
+  Core1ParkRequest = 0
+  ProcedureReturn ok
+EndProcedure
+
+Procedure AudioBegin()
+  Protected rc.i, key.i
+  AudioRunning = 0 : AudioLive = 0
+  If InvBtPeerSet = 0
+    Say("INVADERS audio: no speaker address (public build) - silent") : Eol()
+    ProcedureReturn
+  EndIf
+  Say("INVADERS Bluetooth: connecting the speaker") : Eol()
+  key = InvBtKeyAddr()
+  If key : BtAudioSetKey(key) : EndIf
+  rc = BtAudioBegin(@InvBtPeer(0))
+  Say("BT AUDIO rc=") : Num(rc) : Eol()
+  If rc <> 0
+    Say("INVADERS Bluetooth unavailable (HCI status ") : Num(BtAudioStatus()) : Say("); continuing without sound") : Eol()
+    ProcedureReturn
+  EndIf
+  If BtAudioKeyNew()
+    If InvSaveBtKey() : Say("INVADERS Bluetooth: link key saved") : Else : Say("INVADERS Bluetooth: link key NOT saved") : EndIf
+    Eol()
+  EndIf
+  BtAudioSource(@InvPcm(0), #INV_RING, @InvSamples)
+  BtAudioLead(#BT_LEAD_US)
+  BtAudioPumps(0)
+  AudioLive = 1 : AudioRunning = 1
+EndProcedure
+
+ProcedureRAM AudioPoll()
+  Protected start.i
+  If AudioRunning = 0 : ProcedureReturn : EndIf
+  start = Micros()
+  If start - AudioLastPoll < AudioGap : ProcedureReturn : EndIf
+  AudioLastPoll = start
+  BtAudioPoll()
+  If BtAudioBusy() : AudioGap = 150 : Else : AudioGap = 700 : EndIf
+  If start - AudioLastRead > 100000
+    AudioLive = BtAudioLive() : AudioUnderruns = BtAudioUnderruns() : AudioPackets = BtAudioPackets()
+    AudioLastRead = start
+  EndIf
+EndProcedure

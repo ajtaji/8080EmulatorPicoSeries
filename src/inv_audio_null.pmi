@@ -1,0 +1,10 @@
+; No radio in this build: the machine still fills its sound ring; nothing plays it.
+Global AudioRunning.i, AudioLive.i, AudioUnderruns.i, AudioPackets.i
+Global Core1ParkRequest.i, Core1Parked.i
+Procedure InvBluetoothSetPeer(src.i)
+EndProcedure
+Procedure AudioBegin()
+  Say("INVADERS audio: none in this build") : Eol()
+EndProcedure
+ProcedureRAM AudioPoll()
+EndProcedure

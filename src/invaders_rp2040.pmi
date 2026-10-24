@@ -1,0 +1,40 @@
+; Everything the Space Invaders machine needs on the Pico W (RP2040). The
+; program that includes this sets #INV_AUDIO (1: Bluetooth sound, which needs
+; a speaker address from a private wrapper) and #INV_TEST (1: the built-in ROM
+; is the machine test ROM; check it on the board), then calls InvMain().
+#CLOCK_KHZ = 200000
+#CPU_TIMING = 1
+#CPU_ASM_TAIL = 1
+#CPU_MEMMAP = 1
+EnableExplicit
+XIncludeFile "RP2040/Lib/clocks.pico"
+XIncludeFile "RP2040/Lib/timer.pico"
+XIncludeFile "RP2040/Lib/uart.pico"
+XIncludeFile "RP2040/Lib/usb_serial.pico"
+XIncludeFile "RP2040/Lib/safety.pico"
+XIncludeFile "RP2040/Lib/bits.pico"
+XIncludeFile "RP2040/Lib/wiring.pico"
+XIncludeFile "RP2040/Lib/flashid.pico"
+XIncludeFile "RP2040/Lib/flash.pico"
+XIncludeFile "RP2040/Lib/spi.pico"
+XIncludeFile "RP2040/Lib/st7796.pico"
+CompilerIf #INV_AUDIO = 1
+  XIncludeFile "RP2040/Lib/string_out.pico"
+  XIncludeFile "RP2040/Lib/cyw43_nvram.pico"
+  XIncludeFile "RP2040/Lib/cyw43.pico"
+  XIncludeFile "RP2040/Lib/cyw43_btfw.pico"
+  XIncludeFile "RP2040/Lib/bluetooth.pico"
+  XIncludeFile "Shared/Bluetooth/sbc.pmi"
+  XIncludeFile "Shared/Bluetooth/bt_audio.pmi"
+CompilerEndIf
+XIncludeFile "i8080.pico"
+XIncludeFile "io.pico"
+XIncludeFile "invaders.pmi"
+XIncludeFile "inv_video.pico"
+CompilerIf #INV_AUDIO = 1
+  XIncludeFile "inv_audio.pmi"
+CompilerElse
+  XIncludeFile "inv_audio_null.pmi"
+CompilerEndIf
+XIncludeFile "inv_rom.pmi"
+XIncludeFile "inv_app.pmi"

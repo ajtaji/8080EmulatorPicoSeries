@@ -1,0 +1,202 @@
+; The Space Invaders machine on a Pico: core 0 runs a frame of the machine
+; (8080, interrupts, sound into its ring) every 1/60 s and hands the picture
+; to core 1 row by row; core 1 drives the panel and the radio.
+;
+; The ROM is built in (InvRom, from tools/embed_rom.py). With #INV_TEST = 1
+; it is the machine test ROM and, after 120 frames, the board checks what it
+; left in RAM and prints INVADERS_TEST PASS or FAIL.
+;
+; Controls: the LAFVIN carrier's stick (ADC GP26 left/right), button A (GP15)
+; fire, button B (GP14) coin + 1 player start. USB serial keys hold a control
+; for 0.2 s: a left, d right, f fire, c coin, 1 / 2 start; m mute, r reset.
+; Out: INVADERS_STATUS once a second.
+
+Global AppNext.i, AppEmuUs.i, AppWorstUs.i, AppFrames.i, AppLate.i, AppT.i, AppRow.i, AppDst.i
+Global AppReport.i, AppLastOut.i, AppLastVf.i, AppLastSamples.i, AppStep.i
+Global AppResetRequest.i
+Global Core1Ready.i, InHost.i, InHostUntil.i, InLast.i, InCenterX.i = 2048, InButtons.i
+
+ProcedureRAM Core1Main()
+  Core1Ready = 1
+  Repeat
+    If PeekL(@Core1ParkRequest)
+      VidFence() : Core1Parked = 1
+      While PeekL(@Core1ParkRequest) : Wend
+      Core1Parked = 0
+    EndIf
+    VideoPoll()
+    AudioPoll()
+  ForEver
+EndProcedure
+
+Procedure InputBegin()
+  Protected v.i
+  pinMode(15, #INPUT_PULLUP) : pinMode(14, #INPUT_PULLUP)
+  analogReadResolution(12)
+  v = analogRead(26)
+  If v > 1400 And v < 2700 : InCenterX = v : EndIf
+  InLast = Micros()
+EndProcedure
+
+; The stick, the buttons and the host's keys into IN 1, at most 250 times a second.
+Procedure InputPoll()
+  Protected now.i, ax.i, v.i
+  now = Micros()
+  If now - InLast < 4000 : ProcedureReturn : EndIf
+  InLast = now
+  ax = analogReadChannel(0)
+  InButtons = (1 - digitalRead(15)) | ((1 - digitalRead(14)) << 1)
+  v = 0
+  If ax >= 0
+    If ax < InCenterX - 750 : v = v | #INV_P1LEFT : EndIf
+    If ax > InCenterX + 750 : v = v | #INV_P1RIGHT : EndIf
+  EndIf
+  If InButtons & 1 : v = v | #INV_P1FIRE : EndIf
+  If InButtons & 2 : v = v | #INV_COIN | #INV_P1START : EndIf
+  If now - InHostUntil < 0 : v = v | InHost : EndIf
+  InvIn1 = v
+EndProcedure
+
+Procedure AppHostKey(key.i)
+  If key = 97 : InHost = #INV_P1LEFT
+  ElseIf key = 100 : InHost = #INV_P1RIGHT
+  ElseIf key = 102 : InHost = #INV_P1FIRE
+  ElseIf key = 99 : InHost = #INV_COIN
+  ElseIf key = 49 : InHost = #INV_P1START
+  ElseIf key = 50 : InHost = #INV_P2START
+  ElseIf key = 109 : InvMute = 1 - InvMute : ProcedureReturn
+  ElseIf key = 114 : AppResetRequest = 1 : ProcedureReturn
+  Else : ProcedureReturn
+  EndIf
+  InHostUntil = Micros() + 200000
+EndProcedure
+
+Procedure AppTick()
+  Protected key.i
+  UsbSerialTask() : SafetyPet()
+  InputPoll()
+  key = UsbSerialRead()
+  If key >= 0 : AppHostKey(key) : EndIf
+EndProcedure
+
+; The picture of the frame just run, row by row, to core 1.
+Procedure AppPicture()
+  For AppRow = 0 To 255
+    AppDst = VidLine(AppRow)
+    InvLineIndices(AppRow, AppDst)
+    VidLineDone()
+  Next
+EndProcedure
+
+CompilerIf #INV_TEST = 1
+; What the machine test ROM must leave after 120 frames (tools/make_test_rom.py).
+Global TestAdr.l, TestVal.l, TestOk.i, TestC1.l, TestC2.l, TestC3.l
+Procedure AppCheckTest()
+  TestOk = 1
+  Restore InvTestExpect
+  Repeat
+    Read.l TestAdr : Read.l TestVal
+    If TestAdr < 0 : Break : EndIf
+    If M(TestAdr) <> TestVal
+      Say("  FAIL machine RAM $") : Num(TestAdr) : Say(" = ") : Num(M(TestAdr)) : Say(", want ") : Num(TestVal) : Eol()
+      TestOk = 0
+    EndIf
+  ForEver
+  Restore InvTestCounters
+  Read.l TestC1 : Read.l TestC2 : Read.l TestC3
+  If M(TestC2) <> M(TestC3) Or M(TestC1) - M(TestC2) < 0 Or M(TestC1) - M(TestC2) > 1 Or M(TestC2) < 100
+    Say("  FAIL interrupt counters") : Eol() : TestOk = 0
+  EndIf
+  For AppRow = 0 To 31
+    If M($2400 + AppRow) <> $FF Or M($2400 + 223 * 32 + AppRow) <> $FF
+      Say("  FAIL border") : Eol() : TestOk = 0 : Break
+    EndIf
+  Next
+  Say("INVADERS_TEST ")
+  If TestOk : Say("PASS") : Else : Say("FAIL") : EndIf
+  Say(" frames=") : Num(InvFrames) : Say(" RST1=") : Num(M(TestC1)) : Say(" RST2=") : Num(M(TestC2))
+  Say(" shift=") : Num(M($2010)) : Say(",") : Num(M($2011)) : Say(",") : Num(M($2012)) : Say(",") : Num(M($2013))
+  Say(" sprite=") : Num(M($2003)) : Say(" tone0_period=") : Num(TonePeriod(0)) : Eol()
+EndProcedure
+XIncludeFile "../machine/invaders_test_expect.pmi"
+CompilerEndIf
+
+; Only the small procedures below call into the 8080 core: a procedure on
+; the way down to it must leave r4 and r5 (CpuPC and the budget) alone, and a
+; big one uses them for its own values (PM1126). Everything else - the
+; picture, pacing, the status line - runs in procedures that never call it.
+Procedure AppSetup()
+  SafetyBoot()
+  ClockInitKhz(#CLOCK_KHZ)
+  TimerInit()
+  UsbSerialInit()
+  AppT = Micros()
+  While UsbSerialReady() = 0 And Micros() - AppT < 3000000
+    UsbSerialTask() : SafetyPet()
+  Wend
+  Say("INVADERS PureMetal 8080 clk_khz=") : Num(ClockSysKhz()) : Eol()
+  VideoBegin()
+  InputBegin()
+  InvLoad(?InvRom, #INV_ROM_SIZE)
+EndProcedure
+
+Procedure AppStart()
+  Say("INVADERS core1 launch=") : Num(multicore_launch()) : Eol()
+  AppT = Micros()
+  While PeekL(@Core1Ready) = 0 And Micros() - AppT < 1000000 : SafetyPet() : Wend
+  AudioBegin()
+  Say("INVADERS spi_hz=") : Num(SpiHz(0)) : Say(" rom_bytes=") : Num(#INV_ROM_SIZE) : Eol()
+  AppNext = Micros() : AppReport = AppNext
+EndProcedure
+
+; After a frame: the picture, the test check, pacing to 60 Hz, the status line.
+Procedure AppAfterFrame()
+  AppT = Micros() - AppT
+  AppEmuUs = AppEmuUs + AppT
+  If AppT > AppWorstUs : AppWorstUs = AppT : EndIf
+  AppPicture()
+  AppFrames = AppFrames + 1
+  CompilerIf #INV_TEST = 1
+    If InvFrames = 120 : AppCheckTest() : EndIf
+  CompilerEndIf
+  ; 60 Hz: 16,667 / 16,666 / 16,667 us.
+  AppStep = AppStep + 1
+  If AppStep = 3 : AppStep = 0 : EndIf
+  If AppStep = 1 : AppNext = AppNext + 16666 : Else : AppNext = AppNext + 16667 : EndIf
+  If Micros() - AppNext > 100000
+    AppNext = Micros() : AppLate = AppLate + 1
+  EndIf
+  AppTick()
+  While Micros() - AppNext < 0
+    AppTick()
+  Wend
+  If Micros() - AppReport >= 1000000
+    Say("INVADERS_STATUS frames=") : Num(AppFrames) : Say(" emu_us=") : Num(AppEmuUs) : Say(" worst_us=") : Num(AppWorstUs)
+    Say(" lines_out=") : Num(VidLinesOut - AppLastOut) : Say(" lcd_frames=") : Num(VidFrames - AppLastVf)
+    Say(" vid_wait_us=") : Num(VidWaitUs) : Say(" samples=") : Num(InvSamples - AppLastSamples)
+    Say(" in1=") : Num(InvIn1) : Say(" bt_live=") : Num(AudioLive) : Say(" bt_under=") : Num(AudioUnderruns)
+    Say(" bt_packets=") : Num(AudioPackets) : Say(" late=") : Num(AppLate) : Say(" machine_frames=") : Num(InvFrames) : Eol()
+    AppLastOut = VidLinesOut : AppLastVf = VidFrames : AppLastSamples = InvSamples
+    AppFrames = 0 : AppEmuUs = 0 : AppWorstUs = 0 : VidWaitUs = 0 : AppReport = Micros()
+  EndIf
+EndProcedure
+
+Procedure AppFrameStep()
+  If AppResetRequest
+    AppResetRequest = 0
+    InvReset()
+  EndIf
+  AppT = Micros()
+  InvRunFrame()
+  InvMixFrame()
+  AppAfterFrame()
+EndProcedure
+
+Procedure InvMain()
+  AppSetup()
+  InvReset()
+  AppStart()
+  Repeat
+    AppFrameStep()
+  ForEver
+EndProcedure

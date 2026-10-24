@@ -13,8 +13,10 @@ param(
 # (C:\PMFBuild\board-leases\lease.ps1) for exactly the upload and capture.
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path $PSScriptRoot -Parent
-$sourcePath = [IO.Path]::GetFullPath((Join-Path $projectRoot $Source))
-$outputPath = [IO.Path]::GetFullPath((Join-Path $projectRoot $Output))
+# Relative paths are from the repository; absolute ones (a private wrapper
+# outside git, and its image) are taken as they are.
+if ([IO.Path]::IsPathRooted($Source)) { $sourcePath = $Source } else { $sourcePath = [IO.Path]::GetFullPath((Join-Path $projectRoot $Source)) }
+if ([IO.Path]::IsPathRooted($Output)) { $outputPath = $Output } else { $outputPath = [IO.Path]::GetFullPath((Join-Path $projectRoot $Output)) }
 [IO.Directory]::CreateDirectory((Split-Path $outputPath -Parent)) | Out-Null
 $stdoutPath = $outputPath + '.build.log'
 $stderrPath = $outputPath + '.stderr.log'

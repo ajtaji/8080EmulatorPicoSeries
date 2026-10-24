@@ -35,6 +35,8 @@ EndStructure
 
 Global InvShift.i, InvShiftAmt.i, InvIn1.i, InvIn2.i, InvSound3.i, InvSound5.i, InvSoundPrev3.i, InvSoundPrev5.i
 Global InvCycleDebt.i, InvFrames.q, InvLoaded$, InvWatchdog.i
+Global InvLogPorts.i                   ; 1: every OUT is added to InvPortLog$()
+Global NewList InvPortLog$()
 Global Dim InvTones.InvTone(3)
 Global InvNoise.l = $1234
 ; Original effects: a timer and a phase each.
@@ -126,6 +128,9 @@ EndProcedure
 
 Procedure InvPortOut(port.i, value.i)
   Protected c.i, r.i
+  If InvLogPorts
+    AddElement(InvPortLog$()) : InvPortLog$() = "frame " + Str(InvFrames) + " OUT $" + RSet(Hex(port), 2, "0") + " = $" + RSet(Hex(value & 255), 2, "0")
+  EndIf
   Select port
     Case 2 : InvShiftAmt = value & 7
     Case 4 : InvShift = ((value & 255) << 8) | (InvShift >> 8)

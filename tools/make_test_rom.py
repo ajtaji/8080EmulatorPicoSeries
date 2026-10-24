@@ -182,5 +182,6 @@ if __name__ == '__main__':
     lines += ['  Data.l -1, -1', '  InvTestCounters:']
     lines += ['  Data.l ' + ', '.join(f'${c:04X}' for c in COUNTERS)]
     lines += ['EndDataSection']
-    (out / 'invaders_test_expect.pbi').write_text('\n'.join(lines) + '\n')
+    for ext in ('pbi', 'pmi'):       # the desktop (PureBasic) and the Pico (PureMetal)
+        (out / f'invaders_test_expect.{ext}').write_text('\n'.join(lines) + '\n')
     print('machine/invaders_test.rom', len(rom), 'bytes;', {hex(k): v for k, v in EXPECT.items()})

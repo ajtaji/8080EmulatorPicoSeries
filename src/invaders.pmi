@@ -1,0 +1,270 @@
+; Space Invaders (Taito 8080) hardware around the 8080 core, for the Picos.
+; The same machine as desktop/invaders.pbi:
+;
+;   $0000-$1FFF  8 KB ROM (writes ignored)       $2000-$23FF  work RAM
+;   $2400-$3FFF  video RAM, 1 bpp: byte $2400 + x*32 + (y>>3), bit (y&7),
+;                x = 0..223 across, y = 0..255 up from the bottom of the
+;                upright screen               $4000-$FFFF  mirrors
+;   2 MHz, 33,333 cycles a 60 Hz frame: RST 1 at mid-screen, RST 2 at VBLANK
+;   IN 1 / IN 2 controls, OUT 2 / OUT 4 / IN 3 the shift register, OUT 3 /
+;   OUT 5 the sound effects, OUT 6 the watchdog, and for the demos a 4-channel
+;   tone device at OUT $10-$1F: channel c at $10 + 4c: +0 period low, +1
+;   period high (bits 0-3), +2 volume 0-15, +3 wave (0 square, 1 25% pulse,
+;   2 triangle, 3 noise); frequency = 62500 / (period + 1) Hz.
+;
+; Needs the core built with #CPU_TIMING = 1 and #CPU_MEMMAP = 1. The core's
+; hooks (CpuPortIn, CpuPortOut, CpuReadTrap, CpuWriteTrap) are here.
+; Procedures that call into the core keep their values in Globals: a local
+; live across the call would sit in a register the core reserves (PM1126).
+
+#INV_FRAME_CYCLES = 33333
+#INV_MID_CYCLES = 16667
+#INV_RING = 4096                 ; sound ring, 48 kHz mono (85 ms)
+#INV_FRAME_SAMPLES = 800         ; 48000 / 60
+
+#INV_COIN = $01
+#INV_P2START = $02
+#INV_P1START = $04
+#INV_P1FIRE = $10
+#INV_P1LEFT = $20
+#INV_P1RIGHT = $40
+
+Global InvShift.i, InvShiftAmt.i, InvIn1.i, InvIn2.i, InvSound3.i, InvSound5.i, InvPrev3.i, InvPrev5.i
+Global InvDebt.i, InvFrames.i, InvWatchdog.i, InvN.i, InvMute.i
+Global Dim InvPcm.w(#INV_RING)
+Global InvSamples.l
+Global Dim TonePeriod.i(4)
+Global Dim ToneVolume.i(4)
+Global Dim ToneWave.i(4)
+Global Dim TonePhase.i(4)
+Global Dim ToneStep.i(4)
+Global Dim FxTime.i(10)
+Global Dim FxPhase.i(10)
+Global Dim FxStep.i(10)
+Global InvNoise.i = $1234
+
+Procedure InvMap()
+  Protected p.i
+  For p = 0 To 255
+    If p < $20
+      CpuMemMap(p) = 1                 ; ROM: read directly, writes to the trap (ignored)
+    ElseIf p < $40
+      CpuMemMap(p) = 3                 ; RAM and video RAM
+    Else
+      CpuMemMap(p) = 0                 ; mirrors: both ways through the trap
+    EndIf
+  Next
+EndProcedure
+
+Procedure.i CpuReadTrap(adr.i)
+  ProcedureReturn M(adr & $3FFF)
+EndProcedure
+Procedure CpuWriteTrap(adr.i, v.i)
+  If (adr & $3FFF) >= $2000
+    M(adr & $3FFF) = v
+  EndIf
+EndProcedure
+
+Procedure.i CpuPortIn(port.i)
+  If port = 1 : ProcedureReturn (InvIn1 | $08) & 255 : EndIf
+  If port = 2 : ProcedureReturn InvIn2 & 255 : EndIf
+  If port = 3 : ProcedureReturn (InvShift >> (8 - InvShiftAmt)) & 255 : EndIf
+  If port = 0 : ProcedureReturn $0E : EndIf
+  ProcedureReturn 0
+EndProcedure
+
+Procedure CpuPortOut(port.i, v.i)
+  Protected c.i
+  If port = 2
+    InvShiftAmt = v & 7
+  ElseIf port = 4
+    InvShift = ((v & 255) << 8) | (InvShift >> 8)
+  ElseIf port = 3
+    InvSound3 = v
+  ElseIf port = 5
+    InvSound5 = v
+  ElseIf port = 6
+    InvWatchdog = InvWatchdog + 1
+  ElseIf port >= $10 And port <= $1F
+    c = (port - $10) >> 2
+    Select port & 3
+      Case 0 : TonePeriod(c) = (TonePeriod(c) & $F00) | (v & 255)
+      Case 1 : TonePeriod(c) = (TonePeriod(c) & $FF) | ((v & 15) << 8)
+      Case 2 : ToneVolume(c) = v & 15
+      Default : ToneWave(c) = v & 3
+    EndSelect
+  EndIf
+EndProcedure
+
+; The ROM at InvRom (size bytes) into $0000, copied into every mirror too,
+; because opcode fetches read M directly.
+Procedure InvLoad(rom.i, size.i)
+  Protected i.i
+  For i = 0 To 65535 : M(i) = 0 : Next
+  For i = 0 To size - 1 : M(i) = PeekA(rom + i) & 255 : Next
+  For i = 0 To $1FFF
+    M($4000 + i) = M(i) : M($8000 + i) = M(i) : M($C000 + i) = M(i)
+  Next
+EndProcedure
+
+Procedure InvReset()
+  Protected i.i
+  InvMap()
+  For i = $2000 To $3FFF : M(i) = 0 : Next
+  CpuReset()
+  InvShift = 0 : InvShiftAmt = 0 : InvSound3 = 0 : InvSound5 = 0 : InvPrev3 = 0 : InvPrev5 = 0
+  InvDebt = 0 : InvFrames = 0
+  For i = 0 To 3 : TonePeriod(i) = 0 : ToneVolume(i) = 0 : ToneWave(i) = 0 : Next
+  For i = 0 To 9 : FxTime(i) = 0 : Next
+EndProcedure
+
+; One 60 Hz frame: run to mid-screen, RST 1, run to VBLANK, RST 2. The cycles
+; a window overshoots come off the next one.
+Procedure InvRunFrame()
+  InvN = #INV_MID_CYCLES - InvDebt
+  If InvN > 0
+    InvDebt = CpuRun(InvN) - InvN
+  Else
+    InvDebt = 0 - InvN
+  EndIf
+  InvDebt = InvDebt + CpuInterrupt($CF)
+  InvN = #INV_FRAME_CYCLES - #INV_MID_CYCLES - InvDebt
+  If InvN > 0
+    InvDebt = CpuRun(InvN) - InvN
+  Else
+    InvDebt = 0 - InvN
+  EndIf
+  InvDebt = InvDebt + CpuInterrupt($D7)
+  InvFrames = InvFrames + 1
+EndProcedure
+
+; ---------------------------------------------------------------- sound
+; A frame's 800 samples into InvPcm. Phases are 16.16 (one cycle = $10000);
+; every step is worked out once a frame, so no sample needs a division.
+Procedure.i InvHzStep(hz.i)
+  ProcedureReturn (hz * 65536) / 48000
+EndProcedure
+
+Procedure InvStartFx(i.i, frames.i)
+  FxTime(i) = frames * #INV_FRAME_SAMPLES
+EndProcedure
+
+Procedure InvMixFrame()
+  Protected i.i, c.i, v.i, s.i, ph.i, lfo.i
+  ; Tone channels: steps for this frame (62500 / (period + 1) Hz at 48 kHz).
+  For c = 0 To 3
+    ToneStep(c) = 0
+    If TonePeriod(c) > 0 And ToneVolume(c) > 0 And InvMute = 0
+      ToneStep(c) = 8192000 / (96 * (TonePeriod(c) + 1))
+    EndIf
+  Next
+  ; Effects: one-shots start on a rising bit; the UFO sounds while held.
+  If (InvSound3 & 2) And (InvPrev3 & 2) = 0 : InvStartFx(1, 15) : EndIf
+  If (InvSound3 & 4) And (InvPrev3 & 4) = 0 : InvStartFx(2, 60) : EndIf
+  If (InvSound3 & 8) And (InvPrev3 & 8) = 0 : InvStartFx(3, 10) : EndIf
+  If (InvSound3 & 16) And (InvPrev3 & 16) = 0 : InvStartFx(4, 30) : EndIf
+  For c = 0 To 3
+    If (InvSound5 & (1 << c)) And (InvPrev5 & (1 << c)) = 0 : InvStartFx(5 + c, 5) : EndIf
+  Next
+  If (InvSound5 & 16) And (InvPrev5 & 16) = 0 : InvStartFx(9, 30) : EndIf
+  InvPrev3 = InvSound3 : InvPrev5 = InvSound5
+  lfo = InvFrames & 31
+  If lfo > 15 : lfo = 31 - lfo : EndIf
+  FxStep(0) = InvHzStep(500 + lfo * 12)
+  FxStep(1) = InvHzStep(260 + FxTime(1) / 40)
+  FxStep(4) = InvHzStep(1800)
+  FxStep(5) = InvHzStep(98) : FxStep(6) = InvHzStep(86) : FxStep(7) = InvHzStep(76) : FxStep(8) = InvHzStep(68)
+  FxStep(9) = InvHzStep(1600 - FxTime(9) / 20)
+  For i = 1 To #INV_FRAME_SAMPLES
+    v = 0
+    For c = 0 To 3
+      If ToneStep(c)
+        ph = (TonePhase(c) + ToneStep(c)) & $FFFF
+        TonePhase(c) = ph
+        Select ToneWave(c)
+          Case 0
+            If ph < $8000 : s = 127 : Else : s = -127 : EndIf
+          Case 1
+            If ph < $4000 : s = 127 : Else : s = -127 : EndIf
+          Case 2
+            If ph < $8000 : s = (ph >> 7) - 128 : Else : s = 127 - ((ph - $8000) >> 7) : EndIf
+          Default
+            If ph < ToneStep(c)
+              InvNoise = (InvNoise >> 1) ! ((0 - (InvNoise & 1)) & $B400)
+            EndIf
+            s = ((InvNoise & 1) * 254) - 127
+        EndSelect
+        v = v + s * ToneVolume(c)
+      EndIf
+    Next
+    If InvMute = 0
+      If InvSound3 & 1                               ; UFO
+        FxPhase(0) = (FxPhase(0) + FxStep(0)) & $FFFF
+        If FxPhase(0) < $8000 : v = v + 700 : Else : v = v - 700 : EndIf
+      EndIf
+      If FxTime(1) > 0                               ; shot: a falling buzz
+        FxTime(1) = FxTime(1) - 1
+        FxPhase(1) = (FxPhase(1) + FxStep(1)) & $FFFF
+        If FxPhase(1) < $8000 : v = v + 600 : Else : v = v - 600 : EndIf
+      EndIf
+      If FxTime(2) > 0                               ; the player dies: noise dying away
+        FxTime(2) = FxTime(2) - 1
+        InvNoise = (InvNoise >> 1) ! ((0 - (InvNoise & 1)) & $B400)
+        v = v + (((InvNoise & 1) * 2) - 1) * (FxTime(2) >> 4)
+      EndIf
+      If FxTime(3) > 0                               ; an invader dies: a short crack
+        FxTime(3) = FxTime(3) - 1
+        InvNoise = (InvNoise >> 1) ! ((0 - (InvNoise & 1)) & $B400)
+        v = v + (((InvNoise & 1) * 2) - 1) * (FxTime(3) >> 2)
+      EndIf
+      If FxTime(4) > 0                               ; extra life: a high chirp
+        FxTime(4) = FxTime(4) - 1
+        FxPhase(4) = (FxPhase(4) + FxStep(4)) & $FFFF
+        If FxPhase(4) < $8000 : v = v + 500 : Else : v = v - 500 : EndIf
+      EndIf
+      For c = 5 To 8                                 ; the fleet's four footsteps
+        If FxTime(c) > 0
+          FxTime(c) = FxTime(c) - 1
+          FxPhase(c) = (FxPhase(c) + FxStep(c)) & $FFFF
+          If FxPhase(c) < $8000 : v = v + 1200 : Else : v = v - 1200 : EndIf
+        EndIf
+      Next
+      If FxTime(9) > 0                               ; UFO hit: a rising sweep
+        FxTime(9) = FxTime(9) - 1
+        FxPhase(9) = (FxPhase(9) + FxStep(9)) & $FFFF
+        If FxPhase(9) < $8000 : v = v + 700 : Else : v = v - 700 : EndIf
+      EndIf
+    EndIf
+    If v > 32767 : v = 32767 : EndIf
+    If v < -32768 : v = -32768 : EndIf
+    InvPcm(InvSamples & (#INV_RING - 1)) = v
+    InvSamples = InvSamples + 1
+  Next
+EndProcedure
+
+; ---------------------------------------------------------------- picture
+; Screen row r (0 = top of the upright screen) as 224 colour indices:
+; 0 black, 1 white, 2 red (the band near the top), 3 green (near the bottom).
+Procedure InvLineIndices(r.i, dst.i)
+  Protected x.i, y.i, src.i, bit.i, on.i, lo.i, hi.i, mid.i
+  y = 255 - r
+  src = $2400 + (y >> 3)
+  bit = 1 << (y & 7)
+  on = 1
+  If r >= 32 And r < 64 : on = 2 : EndIf
+  If r >= 184 And r < 240 : on = 3 : EndIf
+  lo = 0 : hi = 224 : mid = on
+  If r >= 240 : lo = 16 : hi = 134 : mid = 3 : EndIf
+  For x = 0 To 223
+    If M(src) & bit
+      If x >= lo And x < hi
+        PokeA(dst + x, mid)
+      Else
+        PokeA(dst + x, 1)
+      EndIf
+    Else
+      PokeA(dst + x, 0)
+    EndIf
+    src = src + 32
+  Next
+EndProcedure

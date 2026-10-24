@@ -1,0 +1,8 @@
+; The Space Invaders machine on the Pico W with the LAFVIN ST7796 panel,
+; running the built-in ROM (src/inv_rom.pmi). Public build: no speaker
+; address, so no sound; a private wrapper outside git adds it (see
+; inv_audio.pmi).
+#INV_AUDIO = 0
+#INV_TEST = 1
+XIncludeFile "invaders_rp2040.pmi"
+InvMain()
