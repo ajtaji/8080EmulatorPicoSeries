@@ -188,11 +188,10 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op04:; // INR B, 5 cycles
-  Res = (CpuBC >> 8)
-  FA = Res
-  Res = Res + 1
-  FR = Res & 255
-  CpuBC = (CpuBC & 255) | (FR << 8)
+  Res = CpuBC
+  FA = (Res >> 8)
+  FR = ((Res >> 8) + 1) & 255
+  CpuBC = (Res & 255) | (FR << 8)
   CpuInstr + 1
   Left - 5
   If Left <= 0
@@ -202,11 +201,10 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op05:; // DCR B, 5 cycles
-  Res = (CpuBC >> 8)
-  FA = Res ! $10
-  Res = Res - 1
-  FR = Res & 255
-  CpuBC = (CpuBC & 255) | (FR << 8)
+  Res = CpuBC
+  FA = (Res >> 8) ! $10
+  FR = ((Res >> 8) - 1) & 255
+  CpuBC = (Res & 255) | (FR << 8)
   CpuInstr + 1
   Left - 5
   If Left <= 0
@@ -279,11 +277,10 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op0c:; // INR C, 5 cycles
-  Res = (CpuBC & 255)
+  Res = CpuBC
   FA = Res
-  Res = Res + 1
-  FR = Res & 255
-  CpuBC = (CpuBC & $FF00) | FR
+  FR = (Res + 1) & 255
+  CpuBC = (Res & $FF00) | FR
   CpuInstr + 1
   Left - 5
   If Left <= 0
@@ -293,11 +290,10 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op0d:; // DCR C, 5 cycles
-  Res = (CpuBC & 255)
+  Res = CpuBC
   FA = Res ! $10
-  Res = Res - 1
-  FR = Res & 255
-  CpuBC = (CpuBC & $FF00) | FR
+  FR = (Res - 1) & 255
+  CpuBC = (Res & $FF00) | FR
   CpuInstr + 1
   Left - 5
   If Left <= 0
@@ -370,11 +366,10 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op14:; // INR D, 5 cycles
-  Res = (CpuDE >> 8)
-  FA = Res
-  Res = Res + 1
-  FR = Res & 255
-  CpuDE = (CpuDE & 255) | (FR << 8)
+  Res = CpuDE
+  FA = (Res >> 8)
+  FR = ((Res >> 8) + 1) & 255
+  CpuDE = (Res & 255) | (FR << 8)
   CpuInstr + 1
   Left - 5
   If Left <= 0
@@ -384,11 +379,10 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op15:; // DCR D, 5 cycles
-  Res = (CpuDE >> 8)
-  FA = Res ! $10
-  Res = Res - 1
-  FR = Res & 255
-  CpuDE = (CpuDE & 255) | (FR << 8)
+  Res = CpuDE
+  FA = (Res >> 8) ! $10
+  FR = ((Res >> 8) - 1) & 255
+  CpuDE = (Res & 255) | (FR << 8)
   CpuInstr + 1
   Left - 5
   If Left <= 0
@@ -462,11 +456,10 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op1c:; // INR E, 5 cycles
-  Res = (CpuDE & 255)
+  Res = CpuDE
   FA = Res
-  Res = Res + 1
-  FR = Res & 255
-  CpuDE = (CpuDE & $FF00) | FR
+  FR = (Res + 1) & 255
+  CpuDE = (Res & $FF00) | FR
   CpuInstr + 1
   Left - 5
   If Left <= 0
@@ -476,11 +469,10 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op1d:; // DCR E, 5 cycles
-  Res = (CpuDE & 255)
+  Res = CpuDE
   FA = Res ! $10
-  Res = Res - 1
-  FR = Res & 255
-  CpuDE = (CpuDE & $FF00) | FR
+  FR = (Res - 1) & 255
+  CpuDE = (Res & $FF00) | FR
   CpuInstr + 1
   Left - 5
   If Left <= 0
@@ -558,11 +550,10 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op24:; // INR H, 5 cycles
-  Res = (CpuHL >> 8)
-  FA = Res
-  Res = Res + 1
-  FR = Res & 255
-  CpuHL = (CpuHL & 255) | (FR << 8)
+  Res = CpuHL
+  FA = (Res >> 8)
+  FR = ((Res >> 8) + 1) & 255
+  CpuHL = (Res & 255) | (FR << 8)
   CpuInstr + 1
   Left - 5
   If Left <= 0
@@ -572,11 +563,10 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op25:; // DCR H, 5 cycles
-  Res = (CpuHL >> 8)
-  FA = Res ! $10
-  Res = Res - 1
-  FR = Res & 255
-  CpuHL = (CpuHL & 255) | (FR << 8)
+  Res = CpuHL
+  FA = (Res >> 8) ! $10
+  FR = ((Res >> 8) - 1) & 255
+  CpuHL = (Res & 255) | (FR << 8)
   CpuInstr + 1
   Left - 5
   If Left <= 0
@@ -668,11 +658,10 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op2c:; // INR L, 5 cycles
-  Res = (CpuHL & 255)
+  Res = CpuHL
   FA = Res
-  Res = Res + 1
-  FR = Res & 255
-  CpuHL = (CpuHL & $FF00) | FR
+  FR = (Res + 1) & 255
+  CpuHL = (Res & $FF00) | FR
   CpuInstr + 1
   Left - 5
   If Left <= 0
@@ -682,11 +671,10 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op2d:; // DCR L, 5 cycles
-  Res = (CpuHL & 255)
+  Res = CpuHL
   FA = Res ! $10
-  Res = Res - 1
-  FR = Res & 255
-  CpuHL = (CpuHL & $FF00) | FR
+  FR = (Res - 1) & 255
+  CpuHL = (Res & $FF00) | FR
   CpuInstr + 1
   Left - 5
   If Left <= 0
@@ -762,8 +750,7 @@ Procedure.i CpuRun(n.i)
   ! op34:; // INR M, 10 cycles
   Res = Rd(CpuHL)
   FA = Res
-  Res = Res + 1
-  FR = Res & 255
+  FR = (Res + 1) & 255
   Wr(CpuHL, FR)
   CpuInstr + 1
   Left - 10
@@ -776,8 +763,7 @@ Procedure.i CpuRun(n.i)
   ! op35:; // DCR M, 10 cycles
   Res = Rd(CpuHL)
   FA = Res ! $10
-  Res = Res - 1
-  FR = Res & 255
+  FR = (Res - 1) & 255
   Wr(CpuHL, FR)
   CpuInstr + 1
   Left - 10
@@ -854,8 +840,7 @@ Procedure.i CpuRun(n.i)
   ! op3c:; // INR A, 5 cycles
   Res = CpuA
   FA = Res
-  Res = Res + 1
-  FR = Res & 255
+  FR = (Res + 1) & 255
   CpuA = FR
   CpuInstr + 1
   Left - 5
@@ -868,8 +853,7 @@ Procedure.i CpuRun(n.i)
   ! op3d:; // DCR A, 5 cycles
   Res = CpuA
   FA = Res ! $10
-  Res = Res - 1
-  FR = Res & 255
+  FR = (Res - 1) & 255
   CpuA = FR
   CpuInstr + 1
   Left - 5
@@ -911,7 +895,8 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op41:; // MOV B,C, 5 cycles
-  CpuBC = (CpuBC & 255) | ((CpuBC & 255) << 8)
+  Res = CpuBC
+  CpuBC = (Res & 255) | ((Res & 255) << 8)
   CpuInstr + 1
   Left - 5
   If Left <= 0
@@ -981,7 +966,8 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op48:; // MOV C,B, 5 cycles
-  CpuBC = (CpuBC & $FF00) | (CpuBC >> 8)
+  Res = CpuBC
+  CpuBC = (Res & $FF00) | (Res >> 8)
   CpuInstr + 1
   Left - 5
   If Left <= 0
@@ -1091,7 +1077,8 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op53:; // MOV D,E, 5 cycles
-  CpuDE = (CpuDE & 255) | ((CpuDE & 255) << 8)
+  Res = CpuDE
+  CpuDE = (Res & 255) | ((Res & 255) << 8)
   CpuInstr + 1
   Left - 5
   If Left <= 0
@@ -1161,7 +1148,8 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op5a:; // MOV E,D, 5 cycles
-  CpuDE = (CpuDE & $FF00) | (CpuDE >> 8)
+  Res = CpuDE
+  CpuDE = (Res & $FF00) | (Res >> 8)
   CpuInstr + 1
   Left - 5
   If Left <= 0
@@ -1271,7 +1259,8 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op65:; // MOV H,L, 5 cycles
-  CpuHL = (CpuHL & 255) | ((CpuHL & 255) << 8)
+  Res = CpuHL
+  CpuHL = (Res & 255) | ((Res & 255) << 8)
   CpuInstr + 1
   Left - 5
   If Left <= 0
@@ -1341,7 +1330,8 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op6c:; // MOV L,H, 5 cycles
-  CpuHL = (CpuHL & $FF00) | (CpuHL >> 8)
+  Res = CpuHL
+  CpuHL = (Res & $FF00) | (Res >> 8)
   CpuInstr + 1
   Left - 5
   If Left <= 0
@@ -1539,8 +1529,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op80:; // ADD B, 4 cycles
-  FA = CpuA ! (CpuBC >> 8)
-  Res = CpuA + (CpuBC >> 8)
+  Res = (CpuBC >> 8)
+  FA = CpuA ! Res
+  Res = CpuA + Res
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -1553,8 +1544,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op81:; // ADD C, 4 cycles
-  FA = CpuA ! (CpuBC & 255)
-  Res = CpuA + (CpuBC & 255)
+  Res = (CpuBC & 255)
+  FA = CpuA ! Res
+  Res = CpuA + Res
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -1567,8 +1559,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op82:; // ADD D, 4 cycles
-  FA = CpuA ! (CpuDE >> 8)
-  Res = CpuA + (CpuDE >> 8)
+  Res = (CpuDE >> 8)
+  FA = CpuA ! Res
+  Res = CpuA + Res
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -1581,8 +1574,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op83:; // ADD E, 4 cycles
-  FA = CpuA ! (CpuDE & 255)
-  Res = CpuA + (CpuDE & 255)
+  Res = (CpuDE & 255)
+  FA = CpuA ! Res
+  Res = CpuA + Res
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -1595,8 +1589,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op84:; // ADD H, 4 cycles
-  FA = CpuA ! (CpuHL >> 8)
-  Res = CpuA + (CpuHL >> 8)
+  Res = (CpuHL >> 8)
+  FA = CpuA ! Res
+  Res = CpuA + Res
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -1609,8 +1604,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op85:; // ADD L, 4 cycles
-  FA = CpuA ! (CpuHL & 255)
-  Res = CpuA + (CpuHL & 255)
+  Res = (CpuHL & 255)
+  FA = CpuA ! Res
+  Res = CpuA + Res
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -1623,9 +1619,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op86:; // ADD M, 7 cycles
-  Value = Rd(CpuHL)
-  FA = CpuA ! Value
-  Res = CpuA + Value
+  Res = Rd(CpuHL)
+  FA = CpuA ! Res
+  Res = CpuA + Res
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -1638,8 +1634,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op87:; // ADD A, 4 cycles
-  FA = CpuA ! CpuA
-  Res = CpuA + CpuA
+  Res = CpuA
+  FA = CpuA ! Res
+  Res = CpuA + Res
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -1652,8 +1649,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op88:; // ADC B, 4 cycles
-  FA = CpuA ! (CpuBC >> 8)
-  Res = CpuA + (CpuBC >> 8) + ((FC >> 8) & 1)
+  Res = (CpuBC >> 8)
+  FA = CpuA ! Res
+  Res = CpuA + Res + ((FC >> 8) & 1)
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -1666,8 +1664,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op89:; // ADC C, 4 cycles
-  FA = CpuA ! (CpuBC & 255)
-  Res = CpuA + (CpuBC & 255) + ((FC >> 8) & 1)
+  Res = (CpuBC & 255)
+  FA = CpuA ! Res
+  Res = CpuA + Res + ((FC >> 8) & 1)
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -1680,8 +1679,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op8a:; // ADC D, 4 cycles
-  FA = CpuA ! (CpuDE >> 8)
-  Res = CpuA + (CpuDE >> 8) + ((FC >> 8) & 1)
+  Res = (CpuDE >> 8)
+  FA = CpuA ! Res
+  Res = CpuA + Res + ((FC >> 8) & 1)
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -1694,8 +1694,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op8b:; // ADC E, 4 cycles
-  FA = CpuA ! (CpuDE & 255)
-  Res = CpuA + (CpuDE & 255) + ((FC >> 8) & 1)
+  Res = (CpuDE & 255)
+  FA = CpuA ! Res
+  Res = CpuA + Res + ((FC >> 8) & 1)
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -1708,8 +1709,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op8c:; // ADC H, 4 cycles
-  FA = CpuA ! (CpuHL >> 8)
-  Res = CpuA + (CpuHL >> 8) + ((FC >> 8) & 1)
+  Res = (CpuHL >> 8)
+  FA = CpuA ! Res
+  Res = CpuA + Res + ((FC >> 8) & 1)
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -1722,8 +1724,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op8d:; // ADC L, 4 cycles
-  FA = CpuA ! (CpuHL & 255)
-  Res = CpuA + (CpuHL & 255) + ((FC >> 8) & 1)
+  Res = (CpuHL & 255)
+  FA = CpuA ! Res
+  Res = CpuA + Res + ((FC >> 8) & 1)
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -1736,9 +1739,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op8e:; // ADC M, 7 cycles
-  Value = Rd(CpuHL)
-  FA = CpuA ! Value
-  Res = CpuA + Value + ((FC >> 8) & 1)
+  Res = Rd(CpuHL)
+  FA = CpuA ! Res
+  Res = CpuA + Res + ((FC >> 8) & 1)
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -1751,8 +1754,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op8f:; // ADC A, 4 cycles
-  FA = CpuA ! CpuA
-  Res = CpuA + CpuA + ((FC >> 8) & 1)
+  Res = CpuA
+  FA = CpuA ! Res
+  Res = CpuA + Res + ((FC >> 8) & 1)
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -1765,8 +1769,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op90:; // SUB B, 4 cycles
-  FA = CpuA ! (CpuBC >> 8) ! $10
-  Res = CpuA - (CpuBC >> 8)
+  Res = (CpuBC >> 8)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -1779,8 +1784,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op91:; // SUB C, 4 cycles
-  FA = CpuA ! (CpuBC & 255) ! $10
-  Res = CpuA - (CpuBC & 255)
+  Res = (CpuBC & 255)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -1793,8 +1799,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op92:; // SUB D, 4 cycles
-  FA = CpuA ! (CpuDE >> 8) ! $10
-  Res = CpuA - (CpuDE >> 8)
+  Res = (CpuDE >> 8)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -1807,8 +1814,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op93:; // SUB E, 4 cycles
-  FA = CpuA ! (CpuDE & 255) ! $10
-  Res = CpuA - (CpuDE & 255)
+  Res = (CpuDE & 255)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -1821,8 +1829,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op94:; // SUB H, 4 cycles
-  FA = CpuA ! (CpuHL >> 8) ! $10
-  Res = CpuA - (CpuHL >> 8)
+  Res = (CpuHL >> 8)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -1835,8 +1844,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op95:; // SUB L, 4 cycles
-  FA = CpuA ! (CpuHL & 255) ! $10
-  Res = CpuA - (CpuHL & 255)
+  Res = (CpuHL & 255)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -1849,9 +1859,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op96:; // SUB M, 7 cycles
-  Value = Rd(CpuHL)
-  FA = CpuA ! Value ! $10
-  Res = CpuA - Value
+  Res = Rd(CpuHL)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -1864,8 +1874,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op97:; // SUB A, 4 cycles
-  FA = CpuA ! CpuA ! $10
-  Res = CpuA - CpuA
+  Res = CpuA
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -1878,8 +1889,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op98:; // SBB B, 4 cycles
-  FA = CpuA ! (CpuBC >> 8) ! $10
-  Res = CpuA - (CpuBC >> 8) - ((FC >> 8) & 1)
+  Res = (CpuBC >> 8)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res - ((FC >> 8) & 1)
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -1892,8 +1904,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op99:; // SBB C, 4 cycles
-  FA = CpuA ! (CpuBC & 255) ! $10
-  Res = CpuA - (CpuBC & 255) - ((FC >> 8) & 1)
+  Res = (CpuBC & 255)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res - ((FC >> 8) & 1)
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -1906,8 +1919,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op9a:; // SBB D, 4 cycles
-  FA = CpuA ! (CpuDE >> 8) ! $10
-  Res = CpuA - (CpuDE >> 8) - ((FC >> 8) & 1)
+  Res = (CpuDE >> 8)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res - ((FC >> 8) & 1)
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -1920,8 +1934,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op9b:; // SBB E, 4 cycles
-  FA = CpuA ! (CpuDE & 255) ! $10
-  Res = CpuA - (CpuDE & 255) - ((FC >> 8) & 1)
+  Res = (CpuDE & 255)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res - ((FC >> 8) & 1)
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -1934,8 +1949,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op9c:; // SBB H, 4 cycles
-  FA = CpuA ! (CpuHL >> 8) ! $10
-  Res = CpuA - (CpuHL >> 8) - ((FC >> 8) & 1)
+  Res = (CpuHL >> 8)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res - ((FC >> 8) & 1)
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -1948,8 +1964,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op9d:; // SBB L, 4 cycles
-  FA = CpuA ! (CpuHL & 255) ! $10
-  Res = CpuA - (CpuHL & 255) - ((FC >> 8) & 1)
+  Res = (CpuHL & 255)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res - ((FC >> 8) & 1)
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -1962,9 +1979,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op9e:; // SBB M, 7 cycles
-  Value = Rd(CpuHL)
-  FA = CpuA ! Value ! $10
-  Res = CpuA - Value - ((FC >> 8) & 1)
+  Res = Rd(CpuHL)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res - ((FC >> 8) & 1)
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -1977,8 +1994,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! op9f:; // SBB A, 4 cycles
-  FA = CpuA ! CpuA ! $10
-  Res = CpuA - CpuA - ((FC >> 8) & 1)
+  Res = CpuA
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res - ((FC >> 8) & 1)
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -1991,11 +2009,11 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opa0:; // ANA B, 4 cycles
-  Res = (CpuA | (CpuBC >> 8)) << 1
-  CpuA = CpuA & (CpuBC >> 8)
+  Res = (CpuBC >> 8)
+  FA = ((CpuA | Res) << 1) ! (CpuA & Res)
+  CpuA = CpuA & Res
   FR = CpuA
   FC = 0
-  FA = Res ! CpuA
   CpuInstr + 1
   Left - 4
   If Left <= 0
@@ -2005,11 +2023,11 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opa1:; // ANA C, 4 cycles
-  Res = (CpuA | (CpuBC & 255)) << 1
-  CpuA = CpuA & (CpuBC & 255)
+  Res = (CpuBC & 255)
+  FA = ((CpuA | Res) << 1) ! (CpuA & Res)
+  CpuA = CpuA & Res
   FR = CpuA
   FC = 0
-  FA = Res ! CpuA
   CpuInstr + 1
   Left - 4
   If Left <= 0
@@ -2019,11 +2037,11 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opa2:; // ANA D, 4 cycles
-  Res = (CpuA | (CpuDE >> 8)) << 1
-  CpuA = CpuA & (CpuDE >> 8)
+  Res = (CpuDE >> 8)
+  FA = ((CpuA | Res) << 1) ! (CpuA & Res)
+  CpuA = CpuA & Res
   FR = CpuA
   FC = 0
-  FA = Res ! CpuA
   CpuInstr + 1
   Left - 4
   If Left <= 0
@@ -2033,11 +2051,11 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opa3:; // ANA E, 4 cycles
-  Res = (CpuA | (CpuDE & 255)) << 1
-  CpuA = CpuA & (CpuDE & 255)
+  Res = (CpuDE & 255)
+  FA = ((CpuA | Res) << 1) ! (CpuA & Res)
+  CpuA = CpuA & Res
   FR = CpuA
   FC = 0
-  FA = Res ! CpuA
   CpuInstr + 1
   Left - 4
   If Left <= 0
@@ -2047,11 +2065,11 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opa4:; // ANA H, 4 cycles
-  Res = (CpuA | (CpuHL >> 8)) << 1
-  CpuA = CpuA & (CpuHL >> 8)
+  Res = (CpuHL >> 8)
+  FA = ((CpuA | Res) << 1) ! (CpuA & Res)
+  CpuA = CpuA & Res
   FR = CpuA
   FC = 0
-  FA = Res ! CpuA
   CpuInstr + 1
   Left - 4
   If Left <= 0
@@ -2061,11 +2079,11 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opa5:; // ANA L, 4 cycles
-  Res = (CpuA | (CpuHL & 255)) << 1
-  CpuA = CpuA & (CpuHL & 255)
+  Res = (CpuHL & 255)
+  FA = ((CpuA | Res) << 1) ! (CpuA & Res)
+  CpuA = CpuA & Res
   FR = CpuA
   FC = 0
-  FA = Res ! CpuA
   CpuInstr + 1
   Left - 4
   If Left <= 0
@@ -2075,12 +2093,11 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opa6:; // ANA M, 7 cycles
-  Value = Rd(CpuHL)
-  Res = (CpuA | Value) << 1
-  CpuA = CpuA & Value
+  Res = Rd(CpuHL)
+  FA = ((CpuA | Res) << 1) ! (CpuA & Res)
+  CpuA = CpuA & Res
   FR = CpuA
   FC = 0
-  FA = Res ! CpuA
   CpuInstr + 1
   Left - 7
   If Left <= 0
@@ -2090,11 +2107,11 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opa7:; // ANA A, 4 cycles
-  Res = (CpuA | CpuA) << 1
-  CpuA = CpuA & CpuA
+  Res = CpuA
+  FA = ((CpuA | Res) << 1) ! (CpuA & Res)
+  CpuA = CpuA & Res
   FR = CpuA
   FC = 0
-  FA = Res ! CpuA
   CpuInstr + 1
   Left - 4
   If Left <= 0
@@ -2104,7 +2121,8 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opa8:; // XRA B, 4 cycles
-  CpuA = CpuA ! (CpuBC >> 8)
+  Res = (CpuBC >> 8)
+  CpuA = CpuA ! Res
   FR = CpuA
   FC = 0
   FA = CpuA
@@ -2117,7 +2135,8 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opa9:; // XRA C, 4 cycles
-  CpuA = CpuA ! (CpuBC & 255)
+  Res = (CpuBC & 255)
+  CpuA = CpuA ! Res
   FR = CpuA
   FC = 0
   FA = CpuA
@@ -2130,7 +2149,8 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opaa:; // XRA D, 4 cycles
-  CpuA = CpuA ! (CpuDE >> 8)
+  Res = (CpuDE >> 8)
+  CpuA = CpuA ! Res
   FR = CpuA
   FC = 0
   FA = CpuA
@@ -2143,7 +2163,8 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opab:; // XRA E, 4 cycles
-  CpuA = CpuA ! (CpuDE & 255)
+  Res = (CpuDE & 255)
+  CpuA = CpuA ! Res
   FR = CpuA
   FC = 0
   FA = CpuA
@@ -2156,7 +2177,8 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opac:; // XRA H, 4 cycles
-  CpuA = CpuA ! (CpuHL >> 8)
+  Res = (CpuHL >> 8)
+  CpuA = CpuA ! Res
   FR = CpuA
   FC = 0
   FA = CpuA
@@ -2169,7 +2191,8 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opad:; // XRA L, 4 cycles
-  CpuA = CpuA ! (CpuHL & 255)
+  Res = (CpuHL & 255)
+  CpuA = CpuA ! Res
   FR = CpuA
   FC = 0
   FA = CpuA
@@ -2182,8 +2205,8 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opae:; // XRA M, 7 cycles
-  Value = Rd(CpuHL)
-  CpuA = CpuA ! Value
+  Res = Rd(CpuHL)
+  CpuA = CpuA ! Res
   FR = CpuA
   FC = 0
   FA = CpuA
@@ -2196,7 +2219,8 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opaf:; // XRA A, 4 cycles
-  CpuA = CpuA ! CpuA
+  Res = CpuA
+  CpuA = CpuA ! Res
   FR = CpuA
   FC = 0
   FA = CpuA
@@ -2209,7 +2233,8 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opb0:; // ORA B, 4 cycles
-  CpuA = CpuA | (CpuBC >> 8)
+  Res = (CpuBC >> 8)
+  CpuA = CpuA | Res
   FR = CpuA
   FC = 0
   FA = CpuA
@@ -2222,7 +2247,8 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opb1:; // ORA C, 4 cycles
-  CpuA = CpuA | (CpuBC & 255)
+  Res = (CpuBC & 255)
+  CpuA = CpuA | Res
   FR = CpuA
   FC = 0
   FA = CpuA
@@ -2235,7 +2261,8 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opb2:; // ORA D, 4 cycles
-  CpuA = CpuA | (CpuDE >> 8)
+  Res = (CpuDE >> 8)
+  CpuA = CpuA | Res
   FR = CpuA
   FC = 0
   FA = CpuA
@@ -2248,7 +2275,8 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opb3:; // ORA E, 4 cycles
-  CpuA = CpuA | (CpuDE & 255)
+  Res = (CpuDE & 255)
+  CpuA = CpuA | Res
   FR = CpuA
   FC = 0
   FA = CpuA
@@ -2261,7 +2289,8 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opb4:; // ORA H, 4 cycles
-  CpuA = CpuA | (CpuHL >> 8)
+  Res = (CpuHL >> 8)
+  CpuA = CpuA | Res
   FR = CpuA
   FC = 0
   FA = CpuA
@@ -2274,7 +2303,8 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opb5:; // ORA L, 4 cycles
-  CpuA = CpuA | (CpuHL & 255)
+  Res = (CpuHL & 255)
+  CpuA = CpuA | Res
   FR = CpuA
   FC = 0
   FA = CpuA
@@ -2287,8 +2317,8 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opb6:; // ORA M, 7 cycles
-  Value = Rd(CpuHL)
-  CpuA = CpuA | Value
+  Res = Rd(CpuHL)
+  CpuA = CpuA | Res
   FR = CpuA
   FC = 0
   FA = CpuA
@@ -2301,7 +2331,8 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opb7:; // ORA A, 4 cycles
-  CpuA = CpuA | CpuA
+  Res = CpuA
+  CpuA = CpuA | Res
   FR = CpuA
   FC = 0
   FA = CpuA
@@ -2314,8 +2345,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opb8:; // CMP B, 4 cycles
-  FA = CpuA ! (CpuBC >> 8) ! $10
-  Res = CpuA - (CpuBC >> 8)
+  Res = (CpuBC >> 8)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res
   FC = Res
   FR = Res & 255
   CpuInstr + 1
@@ -2327,8 +2359,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opb9:; // CMP C, 4 cycles
-  FA = CpuA ! (CpuBC & 255) ! $10
-  Res = CpuA - (CpuBC & 255)
+  Res = (CpuBC & 255)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res
   FC = Res
   FR = Res & 255
   CpuInstr + 1
@@ -2340,8 +2373,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opba:; // CMP D, 4 cycles
-  FA = CpuA ! (CpuDE >> 8) ! $10
-  Res = CpuA - (CpuDE >> 8)
+  Res = (CpuDE >> 8)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res
   FC = Res
   FR = Res & 255
   CpuInstr + 1
@@ -2353,8 +2387,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opbb:; // CMP E, 4 cycles
-  FA = CpuA ! (CpuDE & 255) ! $10
-  Res = CpuA - (CpuDE & 255)
+  Res = (CpuDE & 255)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res
   FC = Res
   FR = Res & 255
   CpuInstr + 1
@@ -2366,8 +2401,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opbc:; // CMP H, 4 cycles
-  FA = CpuA ! (CpuHL >> 8) ! $10
-  Res = CpuA - (CpuHL >> 8)
+  Res = (CpuHL >> 8)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res
   FC = Res
   FR = Res & 255
   CpuInstr + 1
@@ -2379,8 +2415,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opbd:; // CMP L, 4 cycles
-  FA = CpuA ! (CpuHL & 255) ! $10
-  Res = CpuA - (CpuHL & 255)
+  Res = (CpuHL & 255)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res
   FC = Res
   FR = Res & 255
   CpuInstr + 1
@@ -2392,9 +2429,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opbe:; // CMP M, 7 cycles
-  Value = Rd(CpuHL)
-  FA = CpuA ! Value ! $10
-  Res = CpuA - Value
+  Res = Rd(CpuHL)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res
   FC = Res
   FR = Res & 255
   CpuInstr + 1
@@ -2406,8 +2443,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opbf:; // CMP A, 4 cycles
-  FA = CpuA ! CpuA ! $10
-  Res = CpuA - CpuA
+  Res = CpuA
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res
   FC = Res
   FR = Res & 255
   CpuInstr + 1
@@ -2497,8 +2535,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opc6:; // ADI, 7 cycles
-  FA = CpuA ! M(CpuPC)
-  Res = CpuA + M(CpuPC)
+  Res = M(CpuPC)
+  FA = CpuA ! Res
+  Res = CpuA + Res
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -2605,8 +2644,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opce:; // ACI, 7 cycles
-  FA = CpuA ! M(CpuPC)
-  Res = CpuA + M(CpuPC) + ((FC >> 8) & 1)
+  Res = M(CpuPC)
+  FA = CpuA ! Res
+  Res = CpuA + Res + ((FC >> 8) & 1)
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -2710,8 +2750,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opd6:; // SUI, 7 cycles
-  FA = CpuA ! M(CpuPC) ! $10
-  Res = CpuA - M(CpuPC)
+  Res = M(CpuPC)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -2819,8 +2860,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opde:; // SBI, 7 cycles
-  FA = CpuA ! M(CpuPC) ! $10
-  Res = CpuA - M(CpuPC) - ((FC >> 8) & 1)
+  Res = M(CpuPC)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res - ((FC >> 8) & 1)
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -2925,11 +2967,11 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! ope6:; // ANI, 7 cycles
-  Res = (CpuA | M(CpuPC)) << 1
-  CpuA = CpuA & M(CpuPC)
+  Res = M(CpuPC)
+  FA = ((CpuA | Res) << 1) ! (CpuA & Res)
+  CpuA = CpuA & Res
   FR = CpuA
   FC = 0
-  FA = Res ! CpuA
   CpuPC = (CpuPC + 1) & $FFFF
   CpuInstr + 1
   Left - 7
@@ -3034,7 +3076,8 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opee:; // XRI, 7 cycles
-  CpuA = CpuA ! M(CpuPC)
+  Res = M(CpuPC)
+  CpuA = CpuA ! Res
   FR = CpuA
   FC = 0
   FA = CpuA
@@ -3140,7 +3183,8 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opf6:; // ORI, 7 cycles
-  CpuA = CpuA | M(CpuPC)
+  Res = M(CpuPC)
+  CpuA = CpuA | Res
   FR = CpuA
   FC = 0
   FA = CpuA
@@ -3247,8 +3291,9 @@ Procedure.i CpuRun(n.i)
   CpuPC = (CpuPC + 1) & $FFFF
   ! goto *i8080_tbl[g_tmp];
   ! opfe:; // CPI, 7 cycles
-  FA = CpuA ! M(CpuPC) ! $10
-  Res = CpuA - M(CpuPC)
+  Res = M(CpuPC)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res
   FC = Res
   FR = Res & 255
   CpuPC = (CpuPC + 1) & $FFFF
@@ -3292,18 +3337,16 @@ Procedure Op03() ; INX B, 5 cycles (charged by CpuRun)
   CpuBC = (CpuBC + 1) & $FFFF
 EndProcedure
 Procedure Op04() ; INR B, 5 cycles (charged by CpuRun)
-  Res = (CpuBC >> 8)
-  FA = Res
-  Res = Res + 1
-  FR = Res & 255
-  CpuBC = (CpuBC & 255) | (FR << 8)
+  Res = CpuBC
+  FA = (Res >> 8)
+  FR = ((Res >> 8) + 1) & 255
+  CpuBC = (Res & 255) | (FR << 8)
 EndProcedure
 Procedure Op05() ; DCR B, 5 cycles (charged by CpuRun)
-  Res = (CpuBC >> 8)
-  FA = Res ! $10
-  Res = Res - 1
-  FR = Res & 255
-  CpuBC = (CpuBC & 255) | (FR << 8)
+  Res = CpuBC
+  FA = (Res >> 8) ! $10
+  FR = ((Res >> 8) - 1) & 255
+  CpuBC = (Res & 255) | (FR << 8)
 EndProcedure
 Procedure Op06() ; MVI B, 7 cycles (charged by CpuRun)
   CpuBC = (CpuBC & 255) | (M(CpuPC) << 8)
@@ -3327,18 +3370,16 @@ Procedure Op0B() ; DCX B, 5 cycles (charged by CpuRun)
   CpuBC = (CpuBC - 1) & $FFFF
 EndProcedure
 Procedure Op0C() ; INR C, 5 cycles (charged by CpuRun)
-  Res = (CpuBC & 255)
+  Res = CpuBC
   FA = Res
-  Res = Res + 1
-  FR = Res & 255
-  CpuBC = (CpuBC & $FF00) | FR
+  FR = (Res + 1) & 255
+  CpuBC = (Res & $FF00) | FR
 EndProcedure
 Procedure Op0D() ; DCR C, 5 cycles (charged by CpuRun)
-  Res = (CpuBC & 255)
+  Res = CpuBC
   FA = Res ! $10
-  Res = Res - 1
-  FR = Res & 255
-  CpuBC = (CpuBC & $FF00) | FR
+  FR = (Res - 1) & 255
+  CpuBC = (Res & $FF00) | FR
 EndProcedure
 Procedure Op0E() ; MVI C, 7 cycles (charged by CpuRun)
   CpuBC = (CpuBC & $FF00) | M(CpuPC)
@@ -3362,18 +3403,16 @@ Procedure Op13() ; INX D, 5 cycles (charged by CpuRun)
   CpuDE = (CpuDE + 1) & $FFFF
 EndProcedure
 Procedure Op14() ; INR D, 5 cycles (charged by CpuRun)
-  Res = (CpuDE >> 8)
-  FA = Res
-  Res = Res + 1
-  FR = Res & 255
-  CpuDE = (CpuDE & 255) | (FR << 8)
+  Res = CpuDE
+  FA = (Res >> 8)
+  FR = ((Res >> 8) + 1) & 255
+  CpuDE = (Res & 255) | (FR << 8)
 EndProcedure
 Procedure Op15() ; DCR D, 5 cycles (charged by CpuRun)
-  Res = (CpuDE >> 8)
-  FA = Res ! $10
-  Res = Res - 1
-  FR = Res & 255
-  CpuDE = (CpuDE & 255) | (FR << 8)
+  Res = CpuDE
+  FA = (Res >> 8) ! $10
+  FR = ((Res >> 8) - 1) & 255
+  CpuDE = (Res & 255) | (FR << 8)
 EndProcedure
 Procedure Op16() ; MVI D, 7 cycles (charged by CpuRun)
   CpuDE = (CpuDE & 255) | (M(CpuPC) << 8)
@@ -3398,18 +3437,16 @@ Procedure Op1B() ; DCX D, 5 cycles (charged by CpuRun)
   CpuDE = (CpuDE - 1) & $FFFF
 EndProcedure
 Procedure Op1C() ; INR E, 5 cycles (charged by CpuRun)
-  Res = (CpuDE & 255)
+  Res = CpuDE
   FA = Res
-  Res = Res + 1
-  FR = Res & 255
-  CpuDE = (CpuDE & $FF00) | FR
+  FR = (Res + 1) & 255
+  CpuDE = (Res & $FF00) | FR
 EndProcedure
 Procedure Op1D() ; DCR E, 5 cycles (charged by CpuRun)
-  Res = (CpuDE & 255)
+  Res = CpuDE
   FA = Res ! $10
-  Res = Res - 1
-  FR = Res & 255
-  CpuDE = (CpuDE & $FF00) | FR
+  FR = (Res - 1) & 255
+  CpuDE = (Res & $FF00) | FR
 EndProcedure
 Procedure Op1E() ; MVI E, 7 cycles (charged by CpuRun)
   CpuDE = (CpuDE & $FF00) | M(CpuPC)
@@ -3438,18 +3475,16 @@ Procedure Op23() ; INX H, 5 cycles (charged by CpuRun)
   CpuHL = (CpuHL + 1) & $FFFF
 EndProcedure
 Procedure Op24() ; INR H, 5 cycles (charged by CpuRun)
-  Res = (CpuHL >> 8)
-  FA = Res
-  Res = Res + 1
-  FR = Res & 255
-  CpuHL = (CpuHL & 255) | (FR << 8)
+  Res = CpuHL
+  FA = (Res >> 8)
+  FR = ((Res >> 8) + 1) & 255
+  CpuHL = (Res & 255) | (FR << 8)
 EndProcedure
 Procedure Op25() ; DCR H, 5 cycles (charged by CpuRun)
-  Res = (CpuHL >> 8)
-  FA = Res ! $10
-  Res = Res - 1
-  FR = Res & 255
-  CpuHL = (CpuHL & 255) | (FR << 8)
+  Res = CpuHL
+  FA = (Res >> 8) ! $10
+  FR = ((Res >> 8) - 1) & 255
+  CpuHL = (Res & 255) | (FR << 8)
 EndProcedure
 Procedure Op26() ; MVI H, 7 cycles (charged by CpuRun)
   CpuHL = (CpuHL & 255) | (M(CpuPC) << 8)
@@ -3492,18 +3527,16 @@ Procedure Op2B() ; DCX H, 5 cycles (charged by CpuRun)
   CpuHL = (CpuHL - 1) & $FFFF
 EndProcedure
 Procedure Op2C() ; INR L, 5 cycles (charged by CpuRun)
-  Res = (CpuHL & 255)
+  Res = CpuHL
   FA = Res
-  Res = Res + 1
-  FR = Res & 255
-  CpuHL = (CpuHL & $FF00) | FR
+  FR = (Res + 1) & 255
+  CpuHL = (Res & $FF00) | FR
 EndProcedure
 Procedure Op2D() ; DCR L, 5 cycles (charged by CpuRun)
-  Res = (CpuHL & 255)
+  Res = CpuHL
   FA = Res ! $10
-  Res = Res - 1
-  FR = Res & 255
-  CpuHL = (CpuHL & $FF00) | FR
+  FR = (Res - 1) & 255
+  CpuHL = (Res & $FF00) | FR
 EndProcedure
 Procedure Op2E() ; MVI L, 7 cycles (charged by CpuRun)
   CpuHL = (CpuHL & $FF00) | M(CpuPC)
@@ -3530,15 +3563,13 @@ EndProcedure
 Procedure Op34() ; INR M, 10 cycles (charged by CpuRun)
   Res = Rd(CpuHL)
   FA = Res
-  Res = Res + 1
-  FR = Res & 255
+  FR = (Res + 1) & 255
   Wr(CpuHL, FR)
 EndProcedure
 Procedure Op35() ; DCR M, 10 cycles (charged by CpuRun)
   Res = Rd(CpuHL)
   FA = Res ! $10
-  Res = Res - 1
-  FR = Res & 255
+  FR = (Res - 1) & 255
   Wr(CpuHL, FR)
 EndProcedure
 Procedure Op36() ; MVI M, 10 cycles (charged by CpuRun)
@@ -3566,15 +3597,13 @@ EndProcedure
 Procedure Op3C() ; INR A, 5 cycles (charged by CpuRun)
   Res = CpuA
   FA = Res
-  Res = Res + 1
-  FR = Res & 255
+  FR = (Res + 1) & 255
   CpuA = FR
 EndProcedure
 Procedure Op3D() ; DCR A, 5 cycles (charged by CpuRun)
   Res = CpuA
   FA = Res ! $10
-  Res = Res - 1
-  FR = Res & 255
+  FR = (Res - 1) & 255
   CpuA = FR
 EndProcedure
 Procedure Op3E() ; MVI A, 7 cycles (charged by CpuRun)
@@ -3588,7 +3617,8 @@ Procedure Op40() ; MOV B,B, 5 cycles (charged by CpuRun)
   CpuBC = (CpuBC & 255) | ((CpuBC >> 8) << 8)
 EndProcedure
 Procedure Op41() ; MOV B,C, 5 cycles (charged by CpuRun)
-  CpuBC = (CpuBC & 255) | ((CpuBC & 255) << 8)
+  Res = CpuBC
+  CpuBC = (Res & 255) | ((Res & 255) << 8)
 EndProcedure
 Procedure Op42() ; MOV B,D, 5 cycles (charged by CpuRun)
   CpuBC = (CpuBC & 255) | ((CpuDE >> 8) << 8)
@@ -3609,7 +3639,8 @@ Procedure Op47() ; MOV B,A, 5 cycles (charged by CpuRun)
   CpuBC = (CpuBC & 255) | (CpuA << 8)
 EndProcedure
 Procedure Op48() ; MOV C,B, 5 cycles (charged by CpuRun)
-  CpuBC = (CpuBC & $FF00) | (CpuBC >> 8)
+  Res = CpuBC
+  CpuBC = (Res & $FF00) | (Res >> 8)
 EndProcedure
 Procedure Op49() ; MOV C,C, 5 cycles (charged by CpuRun)
   CpuBC = (CpuBC & $FF00) | (CpuBC & 255)
@@ -3642,7 +3673,8 @@ Procedure Op52() ; MOV D,D, 5 cycles (charged by CpuRun)
   CpuDE = (CpuDE & 255) | ((CpuDE >> 8) << 8)
 EndProcedure
 Procedure Op53() ; MOV D,E, 5 cycles (charged by CpuRun)
-  CpuDE = (CpuDE & 255) | ((CpuDE & 255) << 8)
+  Res = CpuDE
+  CpuDE = (Res & 255) | ((Res & 255) << 8)
 EndProcedure
 Procedure Op54() ; MOV D,H, 5 cycles (charged by CpuRun)
   CpuDE = (CpuDE & 255) | ((CpuHL >> 8) << 8)
@@ -3663,7 +3695,8 @@ Procedure Op59() ; MOV E,C, 5 cycles (charged by CpuRun)
   CpuDE = (CpuDE & $FF00) | (CpuBC & 255)
 EndProcedure
 Procedure Op5A() ; MOV E,D, 5 cycles (charged by CpuRun)
-  CpuDE = (CpuDE & $FF00) | (CpuDE >> 8)
+  Res = CpuDE
+  CpuDE = (Res & $FF00) | (Res >> 8)
 EndProcedure
 Procedure Op5B() ; MOV E,E, 5 cycles (charged by CpuRun)
   CpuDE = (CpuDE & $FF00) | (CpuDE & 255)
@@ -3696,7 +3729,8 @@ Procedure Op64() ; MOV H,H, 5 cycles (charged by CpuRun)
   CpuHL = (CpuHL & 255) | ((CpuHL >> 8) << 8)
 EndProcedure
 Procedure Op65() ; MOV H,L, 5 cycles (charged by CpuRun)
-  CpuHL = (CpuHL & 255) | ((CpuHL & 255) << 8)
+  Res = CpuHL
+  CpuHL = (Res & 255) | ((Res & 255) << 8)
 EndProcedure
 Procedure Op66() ; MOV H,M, 7 cycles (charged by CpuRun)
   CpuHL = (CpuHL & 255) | (Rd(CpuHL) << 8)
@@ -3717,7 +3751,8 @@ Procedure Op6B() ; MOV L,E, 5 cycles (charged by CpuRun)
   CpuHL = (CpuHL & $FF00) | (CpuDE & 255)
 EndProcedure
 Procedure Op6C() ; MOV L,H, 5 cycles (charged by CpuRun)
-  CpuHL = (CpuHL & $FF00) | (CpuHL >> 8)
+  Res = CpuHL
+  CpuHL = (Res & $FF00) | (Res >> 8)
 EndProcedure
 Procedure Op6D() ; MOV L,L, 5 cycles (charged by CpuRun)
   CpuHL = (CpuHL & $FF00) | (CpuHL & 255)
@@ -3780,434 +3815,482 @@ Procedure Op7F() ; MOV A,A, 5 cycles (charged by CpuRun)
   CpuA = CpuA
 EndProcedure
 Procedure Op80() ; ADD B, 4 cycles (charged by CpuRun)
-  FA = CpuA ! (CpuBC >> 8)
-  Res = CpuA + (CpuBC >> 8)
+  Res = (CpuBC >> 8)
+  FA = CpuA ! Res
+  Res = CpuA + Res
   FC = Res
   CpuA = Res & 255
   FR = CpuA
 EndProcedure
 Procedure Op81() ; ADD C, 4 cycles (charged by CpuRun)
-  FA = CpuA ! (CpuBC & 255)
-  Res = CpuA + (CpuBC & 255)
+  Res = (CpuBC & 255)
+  FA = CpuA ! Res
+  Res = CpuA + Res
   FC = Res
   CpuA = Res & 255
   FR = CpuA
 EndProcedure
 Procedure Op82() ; ADD D, 4 cycles (charged by CpuRun)
-  FA = CpuA ! (CpuDE >> 8)
-  Res = CpuA + (CpuDE >> 8)
+  Res = (CpuDE >> 8)
+  FA = CpuA ! Res
+  Res = CpuA + Res
   FC = Res
   CpuA = Res & 255
   FR = CpuA
 EndProcedure
 Procedure Op83() ; ADD E, 4 cycles (charged by CpuRun)
-  FA = CpuA ! (CpuDE & 255)
-  Res = CpuA + (CpuDE & 255)
+  Res = (CpuDE & 255)
+  FA = CpuA ! Res
+  Res = CpuA + Res
   FC = Res
   CpuA = Res & 255
   FR = CpuA
 EndProcedure
 Procedure Op84() ; ADD H, 4 cycles (charged by CpuRun)
-  FA = CpuA ! (CpuHL >> 8)
-  Res = CpuA + (CpuHL >> 8)
+  Res = (CpuHL >> 8)
+  FA = CpuA ! Res
+  Res = CpuA + Res
   FC = Res
   CpuA = Res & 255
   FR = CpuA
 EndProcedure
 Procedure Op85() ; ADD L, 4 cycles (charged by CpuRun)
-  FA = CpuA ! (CpuHL & 255)
-  Res = CpuA + (CpuHL & 255)
+  Res = (CpuHL & 255)
+  FA = CpuA ! Res
+  Res = CpuA + Res
   FC = Res
   CpuA = Res & 255
   FR = CpuA
 EndProcedure
 Procedure Op86() ; ADD M, 7 cycles (charged by CpuRun)
-  Value = Rd(CpuHL)
-  FA = CpuA ! Value
-  Res = CpuA + Value
+  Res = Rd(CpuHL)
+  FA = CpuA ! Res
+  Res = CpuA + Res
   FC = Res
   CpuA = Res & 255
   FR = CpuA
 EndProcedure
 Procedure Op87() ; ADD A, 4 cycles (charged by CpuRun)
-  FA = CpuA ! CpuA
-  Res = CpuA + CpuA
+  Res = CpuA
+  FA = CpuA ! Res
+  Res = CpuA + Res
   FC = Res
   CpuA = Res & 255
   FR = CpuA
 EndProcedure
 Procedure Op88() ; ADC B, 4 cycles (charged by CpuRun)
-  FA = CpuA ! (CpuBC >> 8)
-  Res = CpuA + (CpuBC >> 8) + ((FC >> 8) & 1)
+  Res = (CpuBC >> 8)
+  FA = CpuA ! Res
+  Res = CpuA + Res + ((FC >> 8) & 1)
   FC = Res
   CpuA = Res & 255
   FR = CpuA
 EndProcedure
 Procedure Op89() ; ADC C, 4 cycles (charged by CpuRun)
-  FA = CpuA ! (CpuBC & 255)
-  Res = CpuA + (CpuBC & 255) + ((FC >> 8) & 1)
+  Res = (CpuBC & 255)
+  FA = CpuA ! Res
+  Res = CpuA + Res + ((FC >> 8) & 1)
   FC = Res
   CpuA = Res & 255
   FR = CpuA
 EndProcedure
 Procedure Op8A() ; ADC D, 4 cycles (charged by CpuRun)
-  FA = CpuA ! (CpuDE >> 8)
-  Res = CpuA + (CpuDE >> 8) + ((FC >> 8) & 1)
+  Res = (CpuDE >> 8)
+  FA = CpuA ! Res
+  Res = CpuA + Res + ((FC >> 8) & 1)
   FC = Res
   CpuA = Res & 255
   FR = CpuA
 EndProcedure
 Procedure Op8B() ; ADC E, 4 cycles (charged by CpuRun)
-  FA = CpuA ! (CpuDE & 255)
-  Res = CpuA + (CpuDE & 255) + ((FC >> 8) & 1)
+  Res = (CpuDE & 255)
+  FA = CpuA ! Res
+  Res = CpuA + Res + ((FC >> 8) & 1)
   FC = Res
   CpuA = Res & 255
   FR = CpuA
 EndProcedure
 Procedure Op8C() ; ADC H, 4 cycles (charged by CpuRun)
-  FA = CpuA ! (CpuHL >> 8)
-  Res = CpuA + (CpuHL >> 8) + ((FC >> 8) & 1)
+  Res = (CpuHL >> 8)
+  FA = CpuA ! Res
+  Res = CpuA + Res + ((FC >> 8) & 1)
   FC = Res
   CpuA = Res & 255
   FR = CpuA
 EndProcedure
 Procedure Op8D() ; ADC L, 4 cycles (charged by CpuRun)
-  FA = CpuA ! (CpuHL & 255)
-  Res = CpuA + (CpuHL & 255) + ((FC >> 8) & 1)
+  Res = (CpuHL & 255)
+  FA = CpuA ! Res
+  Res = CpuA + Res + ((FC >> 8) & 1)
   FC = Res
   CpuA = Res & 255
   FR = CpuA
 EndProcedure
 Procedure Op8E() ; ADC M, 7 cycles (charged by CpuRun)
-  Value = Rd(CpuHL)
-  FA = CpuA ! Value
-  Res = CpuA + Value + ((FC >> 8) & 1)
+  Res = Rd(CpuHL)
+  FA = CpuA ! Res
+  Res = CpuA + Res + ((FC >> 8) & 1)
   FC = Res
   CpuA = Res & 255
   FR = CpuA
 EndProcedure
 Procedure Op8F() ; ADC A, 4 cycles (charged by CpuRun)
-  FA = CpuA ! CpuA
-  Res = CpuA + CpuA + ((FC >> 8) & 1)
+  Res = CpuA
+  FA = CpuA ! Res
+  Res = CpuA + Res + ((FC >> 8) & 1)
   FC = Res
   CpuA = Res & 255
   FR = CpuA
 EndProcedure
 Procedure Op90() ; SUB B, 4 cycles (charged by CpuRun)
-  FA = CpuA ! (CpuBC >> 8) ! $10
-  Res = CpuA - (CpuBC >> 8)
+  Res = (CpuBC >> 8)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res
   FC = Res
   CpuA = Res & 255
   FR = CpuA
 EndProcedure
 Procedure Op91() ; SUB C, 4 cycles (charged by CpuRun)
-  FA = CpuA ! (CpuBC & 255) ! $10
-  Res = CpuA - (CpuBC & 255)
+  Res = (CpuBC & 255)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res
   FC = Res
   CpuA = Res & 255
   FR = CpuA
 EndProcedure
 Procedure Op92() ; SUB D, 4 cycles (charged by CpuRun)
-  FA = CpuA ! (CpuDE >> 8) ! $10
-  Res = CpuA - (CpuDE >> 8)
+  Res = (CpuDE >> 8)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res
   FC = Res
   CpuA = Res & 255
   FR = CpuA
 EndProcedure
 Procedure Op93() ; SUB E, 4 cycles (charged by CpuRun)
-  FA = CpuA ! (CpuDE & 255) ! $10
-  Res = CpuA - (CpuDE & 255)
+  Res = (CpuDE & 255)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res
   FC = Res
   CpuA = Res & 255
   FR = CpuA
 EndProcedure
 Procedure Op94() ; SUB H, 4 cycles (charged by CpuRun)
-  FA = CpuA ! (CpuHL >> 8) ! $10
-  Res = CpuA - (CpuHL >> 8)
+  Res = (CpuHL >> 8)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res
   FC = Res
   CpuA = Res & 255
   FR = CpuA
 EndProcedure
 Procedure Op95() ; SUB L, 4 cycles (charged by CpuRun)
-  FA = CpuA ! (CpuHL & 255) ! $10
-  Res = CpuA - (CpuHL & 255)
+  Res = (CpuHL & 255)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res
   FC = Res
   CpuA = Res & 255
   FR = CpuA
 EndProcedure
 Procedure Op96() ; SUB M, 7 cycles (charged by CpuRun)
-  Value = Rd(CpuHL)
-  FA = CpuA ! Value ! $10
-  Res = CpuA - Value
+  Res = Rd(CpuHL)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res
   FC = Res
   CpuA = Res & 255
   FR = CpuA
 EndProcedure
 Procedure Op97() ; SUB A, 4 cycles (charged by CpuRun)
-  FA = CpuA ! CpuA ! $10
-  Res = CpuA - CpuA
+  Res = CpuA
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res
   FC = Res
   CpuA = Res & 255
   FR = CpuA
 EndProcedure
 Procedure Op98() ; SBB B, 4 cycles (charged by CpuRun)
-  FA = CpuA ! (CpuBC >> 8) ! $10
-  Res = CpuA - (CpuBC >> 8) - ((FC >> 8) & 1)
+  Res = (CpuBC >> 8)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res - ((FC >> 8) & 1)
   FC = Res
   CpuA = Res & 255
   FR = CpuA
 EndProcedure
 Procedure Op99() ; SBB C, 4 cycles (charged by CpuRun)
-  FA = CpuA ! (CpuBC & 255) ! $10
-  Res = CpuA - (CpuBC & 255) - ((FC >> 8) & 1)
+  Res = (CpuBC & 255)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res - ((FC >> 8) & 1)
   FC = Res
   CpuA = Res & 255
   FR = CpuA
 EndProcedure
 Procedure Op9A() ; SBB D, 4 cycles (charged by CpuRun)
-  FA = CpuA ! (CpuDE >> 8) ! $10
-  Res = CpuA - (CpuDE >> 8) - ((FC >> 8) & 1)
+  Res = (CpuDE >> 8)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res - ((FC >> 8) & 1)
   FC = Res
   CpuA = Res & 255
   FR = CpuA
 EndProcedure
 Procedure Op9B() ; SBB E, 4 cycles (charged by CpuRun)
-  FA = CpuA ! (CpuDE & 255) ! $10
-  Res = CpuA - (CpuDE & 255) - ((FC >> 8) & 1)
+  Res = (CpuDE & 255)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res - ((FC >> 8) & 1)
   FC = Res
   CpuA = Res & 255
   FR = CpuA
 EndProcedure
 Procedure Op9C() ; SBB H, 4 cycles (charged by CpuRun)
-  FA = CpuA ! (CpuHL >> 8) ! $10
-  Res = CpuA - (CpuHL >> 8) - ((FC >> 8) & 1)
+  Res = (CpuHL >> 8)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res - ((FC >> 8) & 1)
   FC = Res
   CpuA = Res & 255
   FR = CpuA
 EndProcedure
 Procedure Op9D() ; SBB L, 4 cycles (charged by CpuRun)
-  FA = CpuA ! (CpuHL & 255) ! $10
-  Res = CpuA - (CpuHL & 255) - ((FC >> 8) & 1)
+  Res = (CpuHL & 255)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res - ((FC >> 8) & 1)
   FC = Res
   CpuA = Res & 255
   FR = CpuA
 EndProcedure
 Procedure Op9E() ; SBB M, 7 cycles (charged by CpuRun)
-  Value = Rd(CpuHL)
-  FA = CpuA ! Value ! $10
-  Res = CpuA - Value - ((FC >> 8) & 1)
+  Res = Rd(CpuHL)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res - ((FC >> 8) & 1)
   FC = Res
   CpuA = Res & 255
   FR = CpuA
 EndProcedure
 Procedure Op9F() ; SBB A, 4 cycles (charged by CpuRun)
-  FA = CpuA ! CpuA ! $10
-  Res = CpuA - CpuA - ((FC >> 8) & 1)
+  Res = CpuA
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res - ((FC >> 8) & 1)
   FC = Res
   CpuA = Res & 255
   FR = CpuA
 EndProcedure
 Procedure OpA0() ; ANA B, 4 cycles (charged by CpuRun)
-  Res = (CpuA | (CpuBC >> 8)) << 1
-  CpuA = CpuA & (CpuBC >> 8)
+  Res = (CpuBC >> 8)
+  FA = ((CpuA | Res) << 1) ! (CpuA & Res)
+  CpuA = CpuA & Res
   FR = CpuA
   FC = 0
-  FA = Res ! CpuA
 EndProcedure
 Procedure OpA1() ; ANA C, 4 cycles (charged by CpuRun)
-  Res = (CpuA | (CpuBC & 255)) << 1
-  CpuA = CpuA & (CpuBC & 255)
+  Res = (CpuBC & 255)
+  FA = ((CpuA | Res) << 1) ! (CpuA & Res)
+  CpuA = CpuA & Res
   FR = CpuA
   FC = 0
-  FA = Res ! CpuA
 EndProcedure
 Procedure OpA2() ; ANA D, 4 cycles (charged by CpuRun)
-  Res = (CpuA | (CpuDE >> 8)) << 1
-  CpuA = CpuA & (CpuDE >> 8)
+  Res = (CpuDE >> 8)
+  FA = ((CpuA | Res) << 1) ! (CpuA & Res)
+  CpuA = CpuA & Res
   FR = CpuA
   FC = 0
-  FA = Res ! CpuA
 EndProcedure
 Procedure OpA3() ; ANA E, 4 cycles (charged by CpuRun)
-  Res = (CpuA | (CpuDE & 255)) << 1
-  CpuA = CpuA & (CpuDE & 255)
+  Res = (CpuDE & 255)
+  FA = ((CpuA | Res) << 1) ! (CpuA & Res)
+  CpuA = CpuA & Res
   FR = CpuA
   FC = 0
-  FA = Res ! CpuA
 EndProcedure
 Procedure OpA4() ; ANA H, 4 cycles (charged by CpuRun)
-  Res = (CpuA | (CpuHL >> 8)) << 1
-  CpuA = CpuA & (CpuHL >> 8)
+  Res = (CpuHL >> 8)
+  FA = ((CpuA | Res) << 1) ! (CpuA & Res)
+  CpuA = CpuA & Res
   FR = CpuA
   FC = 0
-  FA = Res ! CpuA
 EndProcedure
 Procedure OpA5() ; ANA L, 4 cycles (charged by CpuRun)
-  Res = (CpuA | (CpuHL & 255)) << 1
-  CpuA = CpuA & (CpuHL & 255)
+  Res = (CpuHL & 255)
+  FA = ((CpuA | Res) << 1) ! (CpuA & Res)
+  CpuA = CpuA & Res
   FR = CpuA
   FC = 0
-  FA = Res ! CpuA
 EndProcedure
 Procedure OpA6() ; ANA M, 7 cycles (charged by CpuRun)
-  Value = Rd(CpuHL)
-  Res = (CpuA | Value) << 1
-  CpuA = CpuA & Value
+  Res = Rd(CpuHL)
+  FA = ((CpuA | Res) << 1) ! (CpuA & Res)
+  CpuA = CpuA & Res
   FR = CpuA
   FC = 0
-  FA = Res ! CpuA
 EndProcedure
 Procedure OpA7() ; ANA A, 4 cycles (charged by CpuRun)
-  Res = (CpuA | CpuA) << 1
-  CpuA = CpuA & CpuA
+  Res = CpuA
+  FA = ((CpuA | Res) << 1) ! (CpuA & Res)
+  CpuA = CpuA & Res
   FR = CpuA
   FC = 0
-  FA = Res ! CpuA
 EndProcedure
 Procedure OpA8() ; XRA B, 4 cycles (charged by CpuRun)
-  CpuA = CpuA ! (CpuBC >> 8)
+  Res = (CpuBC >> 8)
+  CpuA = CpuA ! Res
   FR = CpuA
   FC = 0
   FA = CpuA
 EndProcedure
 Procedure OpA9() ; XRA C, 4 cycles (charged by CpuRun)
-  CpuA = CpuA ! (CpuBC & 255)
+  Res = (CpuBC & 255)
+  CpuA = CpuA ! Res
   FR = CpuA
   FC = 0
   FA = CpuA
 EndProcedure
 Procedure OpAA() ; XRA D, 4 cycles (charged by CpuRun)
-  CpuA = CpuA ! (CpuDE >> 8)
+  Res = (CpuDE >> 8)
+  CpuA = CpuA ! Res
   FR = CpuA
   FC = 0
   FA = CpuA
 EndProcedure
 Procedure OpAB() ; XRA E, 4 cycles (charged by CpuRun)
-  CpuA = CpuA ! (CpuDE & 255)
+  Res = (CpuDE & 255)
+  CpuA = CpuA ! Res
   FR = CpuA
   FC = 0
   FA = CpuA
 EndProcedure
 Procedure OpAC() ; XRA H, 4 cycles (charged by CpuRun)
-  CpuA = CpuA ! (CpuHL >> 8)
+  Res = (CpuHL >> 8)
+  CpuA = CpuA ! Res
   FR = CpuA
   FC = 0
   FA = CpuA
 EndProcedure
 Procedure OpAD() ; XRA L, 4 cycles (charged by CpuRun)
-  CpuA = CpuA ! (CpuHL & 255)
+  Res = (CpuHL & 255)
+  CpuA = CpuA ! Res
   FR = CpuA
   FC = 0
   FA = CpuA
 EndProcedure
 Procedure OpAE() ; XRA M, 7 cycles (charged by CpuRun)
-  Value = Rd(CpuHL)
-  CpuA = CpuA ! Value
+  Res = Rd(CpuHL)
+  CpuA = CpuA ! Res
   FR = CpuA
   FC = 0
   FA = CpuA
 EndProcedure
 Procedure OpAF() ; XRA A, 4 cycles (charged by CpuRun)
-  CpuA = CpuA ! CpuA
+  Res = CpuA
+  CpuA = CpuA ! Res
   FR = CpuA
   FC = 0
   FA = CpuA
 EndProcedure
 Procedure OpB0() ; ORA B, 4 cycles (charged by CpuRun)
-  CpuA = CpuA | (CpuBC >> 8)
+  Res = (CpuBC >> 8)
+  CpuA = CpuA | Res
   FR = CpuA
   FC = 0
   FA = CpuA
 EndProcedure
 Procedure OpB1() ; ORA C, 4 cycles (charged by CpuRun)
-  CpuA = CpuA | (CpuBC & 255)
+  Res = (CpuBC & 255)
+  CpuA = CpuA | Res
   FR = CpuA
   FC = 0
   FA = CpuA
 EndProcedure
 Procedure OpB2() ; ORA D, 4 cycles (charged by CpuRun)
-  CpuA = CpuA | (CpuDE >> 8)
+  Res = (CpuDE >> 8)
+  CpuA = CpuA | Res
   FR = CpuA
   FC = 0
   FA = CpuA
 EndProcedure
 Procedure OpB3() ; ORA E, 4 cycles (charged by CpuRun)
-  CpuA = CpuA | (CpuDE & 255)
+  Res = (CpuDE & 255)
+  CpuA = CpuA | Res
   FR = CpuA
   FC = 0
   FA = CpuA
 EndProcedure
 Procedure OpB4() ; ORA H, 4 cycles (charged by CpuRun)
-  CpuA = CpuA | (CpuHL >> 8)
+  Res = (CpuHL >> 8)
+  CpuA = CpuA | Res
   FR = CpuA
   FC = 0
   FA = CpuA
 EndProcedure
 Procedure OpB5() ; ORA L, 4 cycles (charged by CpuRun)
-  CpuA = CpuA | (CpuHL & 255)
+  Res = (CpuHL & 255)
+  CpuA = CpuA | Res
   FR = CpuA
   FC = 0
   FA = CpuA
 EndProcedure
 Procedure OpB6() ; ORA M, 7 cycles (charged by CpuRun)
-  Value = Rd(CpuHL)
-  CpuA = CpuA | Value
+  Res = Rd(CpuHL)
+  CpuA = CpuA | Res
   FR = CpuA
   FC = 0
   FA = CpuA
 EndProcedure
 Procedure OpB7() ; ORA A, 4 cycles (charged by CpuRun)
-  CpuA = CpuA | CpuA
+  Res = CpuA
+  CpuA = CpuA | Res
   FR = CpuA
   FC = 0
   FA = CpuA
 EndProcedure
 Procedure OpB8() ; CMP B, 4 cycles (charged by CpuRun)
-  FA = CpuA ! (CpuBC >> 8) ! $10
-  Res = CpuA - (CpuBC >> 8)
+  Res = (CpuBC >> 8)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res
   FC = Res
   FR = Res & 255
 EndProcedure
 Procedure OpB9() ; CMP C, 4 cycles (charged by CpuRun)
-  FA = CpuA ! (CpuBC & 255) ! $10
-  Res = CpuA - (CpuBC & 255)
+  Res = (CpuBC & 255)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res
   FC = Res
   FR = Res & 255
 EndProcedure
 Procedure OpBA() ; CMP D, 4 cycles (charged by CpuRun)
-  FA = CpuA ! (CpuDE >> 8) ! $10
-  Res = CpuA - (CpuDE >> 8)
+  Res = (CpuDE >> 8)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res
   FC = Res
   FR = Res & 255
 EndProcedure
 Procedure OpBB() ; CMP E, 4 cycles (charged by CpuRun)
-  FA = CpuA ! (CpuDE & 255) ! $10
-  Res = CpuA - (CpuDE & 255)
+  Res = (CpuDE & 255)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res
   FC = Res
   FR = Res & 255
 EndProcedure
 Procedure OpBC() ; CMP H, 4 cycles (charged by CpuRun)
-  FA = CpuA ! (CpuHL >> 8) ! $10
-  Res = CpuA - (CpuHL >> 8)
+  Res = (CpuHL >> 8)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res
   FC = Res
   FR = Res & 255
 EndProcedure
 Procedure OpBD() ; CMP L, 4 cycles (charged by CpuRun)
-  FA = CpuA ! (CpuHL & 255) ! $10
-  Res = CpuA - (CpuHL & 255)
+  Res = (CpuHL & 255)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res
   FC = Res
   FR = Res & 255
 EndProcedure
 Procedure OpBE() ; CMP M, 7 cycles (charged by CpuRun)
-  Value = Rd(CpuHL)
-  FA = CpuA ! Value ! $10
-  Res = CpuA - Value
+  Res = Rd(CpuHL)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res
   FC = Res
   FR = Res & 255
 EndProcedure
 Procedure OpBF() ; CMP A, 4 cycles (charged by CpuRun)
-  FA = CpuA ! CpuA ! $10
-  Res = CpuA - CpuA
+  Res = CpuA
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res
   FC = Res
   FR = Res & 255
 EndProcedure
@@ -4248,8 +4331,9 @@ Procedure OpC5() ; PUSH B, 11 cycles (charged by CpuRun)
   Push16(CpuBC)
 EndProcedure
 Procedure OpC6() ; ADI, 7 cycles (charged by CpuRun)
-  FA = CpuA ! M(CpuPC)
-  Res = CpuA + M(CpuPC)
+  Res = M(CpuPC)
+  FA = CpuA ! Res
+  Res = CpuA + Res
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -4300,8 +4384,9 @@ Procedure OpCD() ; CALL, 17 cycles (charged by CpuRun)
   CpuPC = Ea
 EndProcedure
 Procedure OpCE() ; ACI, 7 cycles (charged by CpuRun)
-  FA = CpuA ! M(CpuPC)
-  Res = CpuA + M(CpuPC) + ((FC >> 8) & 1)
+  Res = M(CpuPC)
+  FA = CpuA ! Res
+  Res = CpuA + Res + ((FC >> 8) & 1)
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -4349,8 +4434,9 @@ Procedure OpD5() ; PUSH D, 11 cycles (charged by CpuRun)
   Push16(CpuDE)
 EndProcedure
 Procedure OpD6() ; SUI, 7 cycles (charged by CpuRun)
-  FA = CpuA ! M(CpuPC) ! $10
-  Res = CpuA - M(CpuPC)
+  Res = M(CpuPC)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -4402,8 +4488,9 @@ Procedure OpDD() ; CALL (undocumented), 17 cycles (charged by CpuRun)
   CpuPC = Ea
 EndProcedure
 Procedure OpDE() ; SBI, 7 cycles (charged by CpuRun)
-  FA = CpuA ! M(CpuPC) ! $10
-  Res = CpuA - M(CpuPC) - ((FC >> 8) & 1)
+  Res = M(CpuPC)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res - ((FC >> 8) & 1)
   FC = Res
   CpuA = Res & 255
   FR = CpuA
@@ -4452,11 +4539,11 @@ Procedure OpE5() ; PUSH H, 11 cycles (charged by CpuRun)
   Push16(CpuHL)
 EndProcedure
 Procedure OpE6() ; ANI, 7 cycles (charged by CpuRun)
-  Res = (CpuA | M(CpuPC)) << 1
-  CpuA = CpuA & M(CpuPC)
+  Res = M(CpuPC)
+  FA = ((CpuA | Res) << 1) ! (CpuA & Res)
+  CpuA = CpuA & Res
   FR = CpuA
   FC = 0
-  FA = Res ! CpuA
   CpuPC = (CpuPC + 1) & $FFFF
 EndProcedure
 Procedure OpE7() ; RST 4, 11 cycles (charged by CpuRun)
@@ -4505,7 +4592,8 @@ Procedure OpED() ; CALL (undocumented), 17 cycles (charged by CpuRun)
   CpuPC = Ea
 EndProcedure
 Procedure OpEE() ; XRI, 7 cycles (charged by CpuRun)
-  CpuA = CpuA ! M(CpuPC)
+  Res = M(CpuPC)
+  CpuA = CpuA ! Res
   FR = CpuA
   FC = 0
   FA = CpuA
@@ -4555,7 +4643,8 @@ Procedure OpF5() ; PUSH PSW, 11 cycles (charged by CpuRun)
   Push16(Tmp)
 EndProcedure
 Procedure OpF6() ; ORI, 7 cycles (charged by CpuRun)
-  CpuA = CpuA | M(CpuPC)
+  Res = M(CpuPC)
+  CpuA = CpuA | Res
   FR = CpuA
   FC = 0
   FA = CpuA
@@ -4608,8 +4697,9 @@ Procedure OpFD() ; CALL (undocumented), 17 cycles (charged by CpuRun)
   CpuPC = Ea
 EndProcedure
 Procedure OpFE() ; CPI, 7 cycles (charged by CpuRun)
-  FA = CpuA ! M(CpuPC) ! $10
-  Res = CpuA - M(CpuPC)
+  Res = M(CpuPC)
+  FA = CpuA ! Res ! $10
+  Res = CpuA - Res
   FC = Res
   FR = Res & 255
   CpuPC = (CpuPC + 1) & $FFFF

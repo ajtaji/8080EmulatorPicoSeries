@@ -14,7 +14,29 @@ ROOT = Path(__file__).resolve().parents[1]
 # --- register layouts and dispatch tails -----------------------------------
 
 LAYOUT = {
+    # RP2040: the layout measured fastest (docs/benchmark-layouts.log): PC and
+    # the budget in low registers so the tail and the countdown need no moves.
     'pico': dict(
+        reserve='ReserveRegister CpuPC = r4, CpuA = r9, Res = r10, Left = r5, CpuHL = r8, FR = r11',
+        table_global='',
+        table_init='',
+        dispatch='''    ASM Uses CpuPC
+      ldr r1, =global_m
+      ldrb r2, [r1, r4]
+      adds r4, #1
+      uxth r4, r4
+      lsls r2, r2, #2
+      ldr r1, =global_dispatch
+      ldr r1, [r1, r2]
+      bx r1
+    EndASM''',
+        charge='''    ASM Uses Left
+      subs r5, #{c}
+      {br} __ul_cpurun_done
+    EndASM''',
+    ),
+    # The first layout, kept for comparison.
+    'pico_first': dict(
         reserve='ReserveRegister CpuPC = r8, CpuA = r9, Res = r10, Left = r11, CpuHL = r4, FR = r5',
         table_global='',
         table_init='',
@@ -71,6 +93,63 @@ LAYOUT = {
       adds r4, #1
       lsls r4, r4, #16
       lsrs r4, r4, #16
+      lsls r2, r2, #2
+      ldr r1, =global_dispatch
+      ldr r1, [r1, r2]
+      bx r1
+    EndASM''',
+        charge='''    ASM Uses Left
+      subs r5, #{c}
+      {br} __ul_cpurun_done
+    EndASM''',
+    ),
+    'pico_d': dict(
+        reserve='ReserveRegister CpuPC = r4, CpuA = r9, Res = r10, Left = r5, CpuHL = r8, FR = r11',
+        table_global='',
+        table_init='',
+        dispatch='''    ASM Uses CpuPC
+      ldr r1, =global_m
+      ldrb r2, [r1, r4]
+      adds r4, #1
+      uxth r4, r4
+      lsls r2, r2, #2
+      ldr r1, =global_dispatch
+      ldr r1, [r1, r2]
+      bx r1
+    EndASM''',
+        charge='''    ASM Uses Left
+      subs r5, #{c}
+      {br} __ul_cpurun_done
+    EndASM''',
+    ),
+    'pico_e': dict(
+        reserve='ReserveRegister CpuPC = r4, CpuA = r6, Res = r10, Left = r5, CpuHL = r8, FR = r11',
+        table_global='',
+        table_init='',
+        dispatch='''    ASM Uses CpuPC
+      ldr r1, =global_m
+      ldrb r2, [r1, r4]
+      adds r4, #1
+      uxth r4, r4
+      lsls r2, r2, #2
+      ldr r1, =global_dispatch
+      ldr r1, [r1, r2]
+      bx r1
+    EndASM''',
+        charge='''    ASM Uses Left
+      subs r5, #{c}
+      {br} __ul_cpurun_done
+    EndASM''',
+    ),
+    'pico_f': dict(
+        reserve='ReserveRegister CpuPC = r4, CpuA = r9, Res = r6, Left = r5, CpuHL = r8, FR = r11',
+        table_global='',
+        table_init='',
+        dispatch='''    ASM Uses CpuPC
+      ldr r1, =global_m
+      ldrb r2, [r1, r4]
+      adds r4, #1
+      uxth r4, r4
       lsls r2, r2, #2
       ldr r1, =global_dispatch
       ldr r1, [r1, r2]
@@ -163,27 +242,20 @@ STEP1 = 'CpuPC = (CpuPC + 1) & $FFFF'
 def alu(k, v):
     """ALU operation k (ADD ADC SUB SBB ANA XRA ORA CMP) on the 8-bit operand v.
 
-    AC is bit 4 of (FA ! FR), so FA holds A ! operand (inverted for the
-    subtractions); a register operand is then read twice instead of being
-    parked in a global. A memory operand is read once (a trap must not fire
-    twice)."""
-    out = []
-    if v.startswith('Rd('):
-        out.append(f'Value = {v}')
-        v = 'Value'
+    The operand is read once, into the scratch register Res (so a memory
+    operand's trap fires once). AC is bit 4 of (FA ! FR): FA holds
+    A ! operand, inverted for the subtractions."""
+    out = [f'Res = {v}']
     if k in (5, 6):
         op = '!' if k == 5 else '|'
-        return out + [f'CpuA = CpuA {op} {v}', 'FR = CpuA', 'FC = 0', 'FA = CpuA']
+        return out + [f'CpuA = CpuA {op} Res', 'FR = CpuA', 'FC = 0', 'FA = CpuA']
     if k == 4:
         # 8080 ANA/ANI: AC is the OR of bit 3 of the two operands.
-        return out + [f'Res = (CpuA | {v}) << 1', f'CpuA = CpuA & {v}', 'FR = CpuA', 'FC = 0', 'FA = Res ! CpuA']
-    if k < 2:
-        out.append(f'FA = CpuA ! {v}')
-    else:
-        out.append(f'FA = CpuA ! {v} ! $10')
-    out.append({0: f'Res = CpuA + {v}', 1: f'Res = CpuA + {v} + ((FC >> 8) & 1)',
-                2: f'Res = CpuA - {v}', 3: f'Res = CpuA - {v} - ((FC >> 8) & 1)',
-                7: f'Res = CpuA - {v}'}[k])
+        return out + ['FA = ((CpuA | Res) << 1) ! (CpuA & Res)', 'CpuA = CpuA & Res', 'FR = CpuA', 'FC = 0']
+    out.append('FA = CpuA ! Res' + (' ! $10' if k >= 2 else ''))
+    out.append({0: 'Res = CpuA + Res', 1: 'Res = CpuA + Res + ((FC >> 8) & 1)',
+                2: 'Res = CpuA - Res', 3: 'Res = CpuA - Res - ((FC >> 8) & 1)',
+                7: 'Res = CpuA - Res'}[k])
     out.append('FC = Res')
     if k == 7:
         out.append('FR = Res & 255')
@@ -202,6 +274,12 @@ def body(op):
         if op == 0x76:
             return 'HLT', [], 'hlt'
         d, s = REG[y], REG[z]
+        same = {('B', 'C'): 'CpuBC', ('C', 'B'): 'CpuBC', ('D', 'E'): 'CpuDE', ('E', 'D'): 'CpuDE',
+                ('H', 'L'): 'CpuHL', ('L', 'H'): 'CpuHL'}.get((d, s))
+        if same:
+            if d in 'BDH':
+                return f'MOV {d},{s}', ['Res = ' + same, f'{same} = (Res & 255) | ((Res & 255) << 8)'], 'next'
+            return f'MOV {d},{s}', ['Res = ' + same, f'{same} = (Res & $FF00) | (Res >> 8)'], 'next'
         return f'MOV {d},{s}', [set8(d, get8(s))], 'next'
     if x == 2:
         return f'{ALU[y]} {REG[z]}', alu(y, get8(REG[z])), 'next'
@@ -228,12 +306,18 @@ def body(op):
             r = REG[y]
             inc = z == 4
             name = ('INR ' if inc else 'DCR ') + r
-            lines = ['Res = ' + get8(r)]
-            if inc:
-                lines += ['FA = Res', 'Res = Res + 1']
+            sign, inv = ('+', '') if inc else ('-', ' ! $10')
+            if r in 'BDH' or r in 'CEL':
+                # The whole pair is read once into Res and written once.
+                pair = {'B': 'CpuBC', 'C': 'CpuBC', 'D': 'CpuDE', 'E': 'CpuDE', 'H': 'CpuHL', 'L': 'CpuHL'}[r]
+                if r in 'CEL':
+                    lines = [f'Res = {pair}', f'FA = Res{inv}', f'FR = (Res {sign} 1) & 255',
+                             f'{pair} = (Res & $FF00) | FR']
+                else:
+                    lines = [f'Res = {pair}', f'FA = (Res >> 8){inv}', f'FR = ((Res >> 8) {sign} 1) & 255',
+                             f'{pair} = (Res & 255) | (FR << 8)']
             else:
-                lines += ['FA = Res ! $10', 'Res = Res - 1']
-            lines += ['FR = Res & 255', set8(r, 'FR')]
+                lines = ['Res = ' + get8(r), f'FA = Res{inv}', f'FR = (Res {sign} 1) & 255', set8(r, 'FR')]
             return name, lines, 'next'
         if z == 6:
             r = REG[y]

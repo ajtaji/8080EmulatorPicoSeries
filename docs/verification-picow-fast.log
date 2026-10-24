@@ -1,0 +1,51 @@
+=== JOB -Source Diagnostics/verify-fast.picow -Output Diagnostics/verify-fast.uf2 -Port COM7 -Seconds 780
+8080 verification clk_sys kHz=200000 timing=0 asm_tail=1 memmap=0
+API/interrupt/flag checks=8731 failures=0 PASS
+*** TST8080
+MICROCOSM ASSOCIATES 8080/8085 CPU DIAGNOSTIC
+ VERSION 1.0  (C) 1980
+ CPU IS OPERATIONAL
+TST8080 output PASS instructions=651 reference=651 count PASS ms=0
+*** 8080PRE
+8080 Preliminary tests complete
+8080PRE output PASS instructions=1061 reference=1061 count PASS ms=0
+*** CPUTEST
+<00><00><00><00><00><00>
+DIAGNOSTICS II V1.2 - CPU TEST
+COPYRIGHT (C) 1981 - SUPERSOFT ASSOCIATES
+ABCDEFGHIJKLMNOPQRSTUVWXYZ
+CPU IS 8080/8085
+BEGIN TIMING TEST
+<07><07>END TIMING TEST
+CPU TESTS OK
+CPUTEST output PASS instructions=33971311 reference=33971311 count PASS ms=5717
+*** 8080EXM
+8080 instruction exerciser
+dad <b,d,h,sp>................  PASS! crc is:14474ba6
+aluop nn......................  PASS! crc is:9e922f9e
+aluop <b,c,d,e,h,l,m,a>.......  PASS! crc is:cf762c86
+<daa,cma,stc,cmc>.............  PASS! crc is:bb3f030c
+<inr,dcr> a...................  PASS! crc is:adb6460e
+<inr,dcr> b...................  PASS! crc is:83ed1345
+<inx,dcx> b...................  PASS! crc is:f79287cd
+<inr,dcr> c...................  PASS! crc is:e5f6721b
+<inr,dcr> d...................  PASS! crc is:15b5579a
+<inx,dcx> d...................  PASS! crc is:7f4e2501
+<inr,dcr> e...................  PASS! crc is:cf2ab396
+<inr,dcr> h...................  PASS! crc is:12b2952c
+<inx,dcx> h...................  PASS! crc is:9f2b23c0
+<inr,dcr> l...................  PASS! crc is:ff57d356
+<inr,dcr> m...................  PASS! crc is:92e963bd
+<inx,dcx> sp..................  PASS! crc is:d5702fab
+lhld nnnn.....................  PASS! crc is:a9c3d5cb
+shld nnnn.....................  PASS! crc is:e8864f26
+lxi <b,d,h,sp>,nnnn...........  PASS! crc is:fcf46e12
+ldax <b,d>....................  PASS! crc is:2b821d5f
+mvi <b,c,d,e,h,l,m,a>,nn......  PASS! crc is:eaa72044
+mov <bcdehla>,<bcdehla>.......  PASS! crc is:10b58cee
+sta nnnn / lda nnnn...........  PASS! crc is:ed57af72
+<rlc,rrc,ral,rar>.............  PASS! crc is:e0d89235
+stax <b,d>....................  PASS! crc is:2b0471e9
+Tests complete
+8080EXM output PASS instructions=2919050698 reference=2919050698 count PASS ms=640634
+verification complete failures=0 PASS

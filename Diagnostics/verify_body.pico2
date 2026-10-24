@@ -29,7 +29,7 @@ Global Failures.i, Checks.i, I.i, J.i, P.i, Got.i, Want.i, WaitStart.i
 Global CountHi.i, CountLo.i, RunStart.i, RunUs.i, TotalFailures.i
 ; The procedures that call into the core keep their working values in
 ; Globals: r4 and r5 hold CpuHL and FR program-wide (PM1126).
-Global R.i, Taken.i, RunN.i, RunFrom.i, RunOk.i, RunWindow.i, StartPc.i
+Global Progress.i, R.i, Taken.i, RunN.i, RunFrom.i, RunOk.i, RunWindow.i, StartPc.i
 Global *TestName, *TestImage, *TestPass, TestSize.i, RefHi.i, RefLo.i
 
 Procedure Emit(c.i)
@@ -364,7 +364,7 @@ Procedure RunCpm()
   M(5) = $D3 : M(6) = 1 : M(7) = $C9
   CpmMode = 1 : Finished = 0
   CpuReset() : CpuPC = $100
-  CountHi = 0 : CountLo = 0
+  CountHi = 0 : CountLo = 0 : Progress = 0
   RunFrom = CapLen
   Say("*** ") : Say(*TestName) : Eol()
   CompilerIf #CPU_TIMING = 1
@@ -381,6 +381,13 @@ Procedure RunCpm()
       CountHi = CountHi + 1
     EndIf
     FlushCap()
+    ; A progress line every 100 windows, so a capture that ends early still
+    ; shows how far the run got and at what rate.
+    Progress = Progress + 1
+    If Progress >= 100
+      Progress = 0
+      Say("  [progress ") : Num64(CountHi, CountLo) : Say(" ms=") : Num((Micros() - RunStart) / 1000) : Say("]") : Eol()
+    EndIf
     If CpuHalted Or RunN = 0 Or CountHi > RefHi
       Break
     EndIf

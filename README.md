@@ -21,8 +21,10 @@ reachable through the API below.
 | `Diagnostics/verify-{fast,timed,pure}.picow(.pico2w)` | Its three configurations |
 | `tools/generate.py` | Generates both cores and the Pico 2 W programs |
 | `tools/fetch_tests.py`, `tools/embed_tests.py` | Fetch (pinned, hashed) and embed the CP/M diagnostics |
-| `tools/build.ps1` | Compile; with `-Port` upload and capture |
-| `tools/board.sh` | Takes the shared board's lease, runs `build.ps1`, releases it |
+| `tools/build.ps1` | Compile; with `-Port` take the bench's board lease, upload and capture |
+| `tools/board.ps1` | Hold one board lease across a file of `build.ps1` jobs |
+| `tools/generate_desktop.py` | Generates the desktop core from the same opcode table |
+| `desktop/` | The PureBasic desktop version (see below) |
 | `firmware/8080-picow.uf2` | The demo, ready to copy to a Pico W in BOOTSEL |
 
 ## Using the core
@@ -114,18 +116,19 @@ and anything outside the CPU.
 .\tools\build.ps1 -Source src/demo.pico2w -Output firmware/8080-pico2w.uf2
 ```
 
-On the shared bench, take the board through the lease wrapper (Bash):
+With `-Port`, `build.ps1` takes the shared bench's lease
+(`C:\PMFBuild\board-leases\lease.ps1`) for the upload and capture:
 
-```bash
-bash tools/board.sh -Source src/demo.picow -Output firmware/8080-picow.uf2 -Port COM7 -Seconds 20
+```powershell
+.\tools\build.ps1 -Source src/demo.picow -Output firmware/8080-picow.uf2 -Port COM7 -Seconds 20
 ```
 
 Diagnostics need the test programs first:
 
-```bash
+```powershell
 py -3 tools/fetch_tests.py
 py -3 tools/embed_tests.py
-bash tools/board.sh -Source Diagnostics/verify-fast.picow -Output Diagnostics/verify-fast.uf2 -Port COM7 -Seconds 900
+.\tools\build.ps1 -Source Diagnostics/verify-fast.picow -Output Diagnostics/verify-fast.uf2 -Port COM7 -Seconds 780
 ```
 
 Regenerate the cores after editing `tools/generate.py`: `py -3 tools/generate.py`.

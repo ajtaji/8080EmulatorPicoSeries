@@ -1,0 +1,38 @@
+# RP2040 register layouts, Pico W at 200 MHz, 1,000,000 instructions per sample, untimed, asm tail (2026-10-23)
+# A pico_first (baseline semantics): PC r8, A r9, Res r10, Left r11, HL r4, FR r5
+register/branch DCR/JNZ instructions=1000000 us=269740 instructions/s=3707273
+arithmetic ADI/XRI/RLC/RAR/ADD/DAA instructions=1000000 us=258572 instructions/s=3867394
+memory copy MOV/STAX/INX/DCR/JNZ instructions=1000000 us=187605 instructions/s=5330348
+call/stack CALL/PUSH/POP/RET instructions=1000000 us=302143 instructions/s=3309691
+=== JOB -Source bench/pico/demo.picow -Output bench/pico/demo.uf2 -Port COM7 -Seconds 10
+register/branch DCR/JNZ instructions=1000000 us=257264 instructions/s=3887057
+arithmetic ADI/XRI/RLC/RAR/ADD/DAA instructions=1000000 us=259287 instructions/s=3856730
+memory copy MOV/STAX/INX/DCR/JNZ instructions=1000000 us=183429 instructions/s=5451700
+call/stack CALL/PUSH/POP/RET instructions=1000000 us=290001 instructions/s=3448263
+=== JOB -Source bench/pico_pclow/demo.picow -Output bench/pico_pclow/demo.uf2 -Port COM7 -Seconds 10
+register/branch DCR/JNZ instructions=1000000 us=247264 instructions/s=4044260
+arithmetic ADI/XRI/RLC/RAR/ADD/DAA instructions=1000000 us=250715 instructions/s=3988592
+memory copy MOV/STAX/INX/DCR/JNZ instructions=1000000 us=173429 instructions/s=5766048
+call/stack CALL/PUSH/POP/RET instructions=1000000 us=278572 instructions/s=3589736
+=== JOB -Source bench/pico_pclow_leftlow/demo.picow -Output bench/pico_pclow_leftlow/demo.uf2 -Port COM7 -Seconds 10
+register/branch DCR/JNZ instructions=1000000 us=237264 instructions/s=4214714
+arithmetic ADI/XRI/RLC/RAR/ADD/DAA instructions=1000000 us=239286 instructions/s=4179099
+memory copy MOV/STAX/INX/DCR/JNZ instructions=1000000 us=163429 instructions/s=6118865
+call/stack CALL/PUSH/POP/RET instructions=1000000 us=267144 instructions/s=3743299
+=== JOB -Source bench/pico_d/demo.picow -Output bench/pico_d/demo.uf2 -Port COM7 -Seconds 10
+register/branch DCR/JNZ instructions=1000000 us=232264 instructions/s=4305445
+arithmetic ADI/XRI/RLC/RAR/ADD/DAA instructions=1000000 us=234286 instructions/s=4268287
+memory copy MOV/STAX/INX/DCR/JNZ instructions=1000000 us=158430 instructions/s=6311935
+call/stack CALL/PUSH/POP/RET instructions=1000000 us=262143 instructions/s=3814711
+=== JOB -Source bench/pico_e/demo.picow -Output bench/pico_e/demo.uf2 -Port COM7 -Seconds 10
+register/branch DCR/JNZ instructions=1000000 us=287157 instructions/s=3482415
+arithmetic ADI/XRI/RLC/RAR/ADD/DAA instructions=1000000 us=271429 instructions/s=3684204
+memory copy MOV/STAX/INX/DCR/JNZ instructions=1000000 us=185118 instructions/s=5401959
+call/stack CALL/PUSH/POP/RET instructions=1000000 us=369287 instructions/s=2707920
+=== JOB -Source bench/pico_f/demo.picow -Output bench/pico_f/demo.uf2 -Port COM7 -Seconds 10
+register/branch DCR/JNZ instructions=1000000 us=287156 instructions/s=3482427
+arithmetic ADI/XRI/RLC/RAR/ADD/DAA instructions=1000000 us=271429 instructions/s=3684204
+memory copy MOV/STAX/INX/DCR/JNZ instructions=1000000 us=185117 instructions/s=5401989
+call/stack CALL/PUSH/POP/RET instructions=1000000 us=369286 instructions/s=2707928
+# variant key: pico = A after the Res/stack/lazy-AC source changes; pico_pclow = PC r4, HL r8; pico_pclow_leftlow = also Left r5, FR r11;
+# pico_d = pclow_leftlow + uxth tail (chosen); pico_e = d with A in r6; pico_f = d with Res in r6

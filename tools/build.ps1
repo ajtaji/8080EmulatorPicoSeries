@@ -9,8 +9,8 @@ param(
     [switch]$NoLease
 )
 # Compiles; with -Port also uploads and captures the board's serial output.
-# A board shared between several workers is taken with an exclusive lease
-# file for exactly the upload and capture, then released.
+# A board shared between several workers is taken with the bench's lease
+# (C:\PMFBuild\board-leases\lease.ps1) for exactly the upload and capture.
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path $PSScriptRoot -Parent
 $sourcePath = [IO.Path]::GetFullPath((Join-Path $projectRoot $Source))
@@ -38,36 +38,16 @@ for ($o = 0; $o -lt $uf2.Length; $o += 512) {
 if ($imageEnd -gt 0x10050000) { throw ('Image reaches 0x{0:X8}, past the NES ROM store at 0x10050000; refusing to upload.' -f $imageEnd) }
 
 if ($Port -and $NoLease) {
+    # The caller (tools/board.ps1) holds the board's lease.
     Invoke-Forge ('--compile "' + $sourcePath + '" -S -o "' + $outputPath + '" --port ' + $Port + ' --seconds ' + $Seconds)
 } elseif ($Port) {
-    $leaseDir = 'C:\PMFBuild\board-leases'
-    [IO.Directory]::CreateDirectory($leaseDir) | Out-Null
-    $lease = Join-Path $leaseDir ($Port + '.lease')
-    while ($true) {
-        try {
-            $stream = [IO.File]::Open($lease, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write)
-            $bytes = [Text.Encoding]::UTF8.GetBytes("$LeaseOwner $(Get-Date -Format o)`r`n")
-            $stream.Write($bytes, 0, $bytes.Length); $stream.Close()
-            break
-        } catch [IO.IOException] {
-            # The holder may release it between the two looks: just try again.
-            $item = Get-Item $lease -ErrorAction SilentlyContinue
-            if (!$item) { Start-Sleep -Seconds 2; continue }
-            $age = (Get-Date) - $item.LastWriteTime
-            $holder = Get-Content -Raw $lease -ErrorAction SilentlyContinue
-            if ($age.TotalMinutes -gt 30) {
-                Write-Host "Lease on $Port is $([int]$age.TotalMinutes) minutes old ($holder); removing it as stale."
-                Remove-Item $lease
-            } else {
-                Write-Host "Board $Port is leased by: $holder - retrying in 30 s"
-                Start-Sleep -Seconds 30
-            }
-        }
-    }
+    # The shared bench's one lease procedure.
+    . 'C:\PMFBuild\board-leases\lease.ps1'
+    $lease = Get-BoardLease -Port $Port -Owner $LeaseOwner -Minutes ([Math]::Ceiling(($Seconds + 90) / 60))
     try {
         Invoke-Forge ('--compile "' + $sourcePath + '" -S -o "' + $outputPath + '" --port ' + $Port + ' --seconds ' + $Seconds)
     } finally {
-        Remove-Item $lease -ErrorAction SilentlyContinue
+        Release-BoardLease $lease
     }
 }
 if ($Verify) {
