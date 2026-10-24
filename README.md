@@ -227,9 +227,9 @@ Proven, 2026-10-23: the test ROM leaves exactly the same RAM on the desktop
 and on the Pico W (RST1 110, RST2 109, shift results 52 / 109 / 254 / 192,
 sprite 40 at frame 120). The Pico W keeps 60 machine frames and 60 panel
 frames a second, 48,000 sound samples a second, using 2.6 ms of core 0 a
-frame for the test ROM and about 3.7 ms for the demo. The demo's music and
-effects were heard on the Bluetooth speaker with no underruns (130 packets a
-second). The desktop sound path is
+frame for the test ROM and about 3.7 ms for the demo. The demo's music (all
+four voices) and effects play on the Bluetooth speaker with no underruns
+(about 125 packets a second). The desktop sound path is
 checked silently by `desktop/audio_check.exe`.
 
 ### The demo
