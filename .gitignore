@@ -17,3 +17,7 @@ bench/
 desktop/*.exe
 desktop/*.log
 desktop/purebasic.c
+demo/demo.bin
+demo/*.slots.txt
+demo/demo.build.log
+demo/demo.stderr.log

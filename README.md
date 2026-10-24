@@ -57,7 +57,10 @@ memory is 64 KiB, the dispatch table 1 KiB.
 | `tools/board.ps1` | Hold one board lease across a file of `build.ps1` jobs |
 | `tools/generate_desktop.py` | Generates the desktop core from the same opcode table |
 | `desktop/` | The PureBasic desktop version (see below) |
-| `firmware/8080-picow.uf2` | The demo, ready to copy to a Pico W in BOOTSEL |
+| `firmware/8080-picow.uf2` | The benchmark demo, ready to copy to a Pico W in BOOTSEL |
+| `firmware/invaders-picow.uf2`, `invaders-demo-picow.uf2` | The Space Invaders machine with the test ROM / the PureMetal demo (Pico W + LAFVIN panel, no sound) |
+| `demo/` | The PureMetal demo for the Space Invaders board, its assets and its ROMs |
+| `machine/` | The machine test ROM and what it must leave in RAM |
 
 ## Using the core
 
@@ -187,6 +190,69 @@ over every instruction group against real silicon take that role.
 The desktop core (below) runs the same four programs with both instruction
 and cycle counts exact.
 
+
+## The Space Invaders machine and the PureMetal demo
+
+The core also runs a whole machine: the Taito 8080 "Space Invaders" board,
+on the desktop and on the Pico W's panel, and a demo for it written in
+PureMetal and compiled for the compiler's Space Invaders board.
+
+**The hardware** (the same contract in `desktop/invaders.pbi` and
+`src/invaders.pmi`): 8 KB ROM at $0000 (writes ignored), RAM $2000-$23FF,
+video RAM $2400-$3FFF (1 bpp, column-major, shown upright 224 x 256 with the
+cabinet's red and green bands), mirrors above $4000; 2 MHz, 33,333 cycles a
+60 Hz frame with RST 1 at mid-screen and RST 2 at the vertical blank; IN 1 /
+IN 2 controls, the shift register (OUT 2, OUT 4, IN 3), the sound bits (OUT 3,
+OUT 5, synthesized), the watchdog (OUT 6). For the demos it adds a 4-channel
+tone device at OUT $10-$1F: channel c at $10 + 4c: period low, period high
+(4 bits), volume 0-15, wave (square, 25% pulse, triangle, noise); frequency
+62500 / (period + 1) Hz.
+
+| | |
+|---|---|
+| `tools/make_test_rom.py` | assembles `machine/invaders_test.rom`: both interrupts counted, the shift register checked, a border and a sprite moved by the controls, a scale on the tone device |
+| `desktop/invaders_cli.exe` | runs a ROM (file, or the compiler's folder of invaders.h/g/f/e) headless: counts, VRAM SHA-256 or checksum, every OUT, RAM bytes, a PNG of the screen |
+| `desktop/i8080desk.exe` | the Screen tab: the machine at integer scale, arrows / Space / 1 / 2 / C, sound through waveOut |
+| `src/invaders.picow` | the Pico W with the LAFVIN ST7796: core 0 runs the machine, core 1 sends the picture by DMA (SPI0 at 100 MHz) and drives the radio; built-in test ROM checked on the board |
+| `src/invaders_demo.picow` | the same with the PureMetal demo built in |
+
+**Sound on the Pico W** goes to a Bluetooth speaker (A2DP, through the
+compiler's `Shared/Bluetooth` libraries). The speaker's address is private:
+a wrapper outside this repository calls `InvBluetoothSetPeer(?address)` and
+includes `src/invaders_rp2040.pmi` (see `src/inv_audio.pmi`). Without one the
+machine runs silent. Controls on the Pico W: the LAFVIN stick, button A
+fires, button B is coin + start; or USB serial keys a / d / f / c / 1 / 2.
+
+Proven, 2026-10-23: the test ROM leaves exactly the same RAM on the desktop
+and on the Pico W (RST1 110, RST2 109, shift results 52 / 109 / 254 / 192,
+sprite 40 at frame 120). The Pico W keeps 60 machine frames and 60 panel
+frames a second, 48,000 sound samples a second, using 2.6 ms of core 0 a
+frame for the test ROM and 3.4 ms for the demo. The desktop sound path is
+checked silently by `desktop/audio_check.exe`.
+
+### The demo
+
+`demo/demo.invaders`, built with the compiler at 9fda90ac8 or later
+(`tools/build_demo.ps1` builds it and runs it headless): the screen wipes in
+under a red PUREMETAL logo, the titles type themselves, then a formation of
+original aliens marches in a wave to the board's four-note footsteps, a UFO
+patrols the sky, a cannon the ground, a ticker types a message, and an
+original tune in A minor (square lead, triangle bass, noise drums) plays on
+the tone device. Graphics, font and music are this project's own
+(`tools/make_demo_assets.py`).
+
+It is shaped by two budgets. A frame is 33,333 cycles and a compiled loop
+moving one byte costs about 600 of them, so work is spread over frames as the
+original game does it (one alien a frame; the opening wipe one column a
+frame). The ROM is 8 KB and compiled statements cost 20-80 bytes each, so the
+scene is data - a table of moving objects run by one loop - and the music
+writes only the registers that change; the program fills the ROM to within
+12 bytes. Measured with `invaders_cli`: the main loop completes 92% of frames
+(the tune is clocked by the vertical-blank interrupt, so it keeps time; the
+objects count passes, so the formation never drifts).
+
+The demo runs identically on the desktop and the Pico W: video RAM's
+checksum at frame 1200 is -1072003873 on both.
 
 ## Desktop version
 

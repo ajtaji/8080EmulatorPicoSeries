@@ -127,10 +127,7 @@ CHORDS = [['A3', 'C4', 'E4'], ['F3', 'A3', 'C4'], ['C4', 'E4', 'G4'], ['G3', 'B3
 DRUMS = [1, 0, 0, 0, 2, 0, 1, 0] * 8          # 1 kick, 2 snare
 assert len(MELODY) == 64 and len(BASS) == 64
 
-MARQUEE = ('    PUREMETAL ON AN 8080 - THE CPU CORE IS COMPUTED GOTO ON A PICO W, '
-           'THIS DEMO IS PUREMETAL COMPILED FOR THE SPACE INVADERS BOARD - '
-           'MUSIC: FOUR TONE CHANNELS AT PORTS 10-1F - GREETINGS TO THE 6502, Z80, 6809, 8086, 8051 '
-           'AND 68000 CREWS!    ')
+MARQUEE = 'PUREMETAL ON AN 8080, AN 8080 ON A PICO W.  HELLO 6502, Z80, 6809, 8086, 8051, 68000!  '
 
 
 def words(values):
@@ -138,7 +135,29 @@ def words(values):
     return [b for v in values for b in (v & 255, v >> 8)]
 
 
-TEXTS = {'TextTop': 'PUREMETAL 8080 DEMO', 'TextBoard': 'SPACE INVADERS BOARD', 'TextFoot': 'PICO W  60 HZ'}
+# The scene's moving objects, one record each (eight bytes): the left
+# column drawn, the byte row, the column data (offset into SpriteCols), how
+# many columns, the step, the left and right limits of that column, and the
+# animation stride (the second frame's offset from the first, 0 for none). Row numbers: video byte
+# rows counted up from the bottom.
+ROW_ALIENS, ROW_UFO, ROW_CANNON = 18, 28, 7
+
+
+def objects():
+    objs = []
+    for i in range(12):
+        col, lower = i % 6, i >= 6
+        kind = 2 if lower else 0                          # sprite pair: 0-1 upper aliens, 2-3 lower
+        left = 8 + col * 16
+        objs.append((left, ROW_ALIENS - 2 * lower, kind * 12, 12, 2, left - 6, left + 100, 12))
+    objs.append((0, ROW_UFO, 48, 20, 2, 0, 202, 0))      # the UFO (SpriteCols 48..67)
+    objs.append((96, ROW_CANNON, 68, 11, 1, 2, 211, 0))  # the cannon (68..78)
+    return objs
+
+
+# The opening's titles as one script: x, byte row, the characters, 0 - and
+# 255 to end.
+TITLES = [(36, 30, 'PUREMETAL 8080 DEMO'), (32, 23, 'SPACE INVADERS BOARD'), (24, 0, 'PICO W  60 HZ')]
 
 
 def data_lines(label, values, kind='a', per=16):
@@ -150,11 +169,14 @@ def data_lines(label, values, kind='a', per=16):
 
 def main():
     font = []
-    for code in range(32, 96):
+    for code in range(32, 91):          # space to 'Z': nothing else is drawn
         font += glyph(chr(code))
     logo = logo_columns('PUREMETAL')
-    aliens = sum((columns(a) for a in ALIENS), [])
-    ufo = columns(UFO, 16)
+    # Sprites with empty columns around them, so that a move of that many
+    # columns leaves nothing behind: aliens and the UFO move two, the cannon one.
+    aliens = sum(([0, 0] + columns(a) + [0, 0] for a in ALIENS), [])
+    ufo = [0, 0] + columns(UFO, 16) + [0, 0]
+    cannon = [0, 0x07, 0x0F, 0x0F, 0x0F, 0x7F, 0x0F, 0x0F, 0x0F, 0x07, 0]
     mel = [0 if n == '.' else period(n) for n in MELODY]
     bass = [0 if n == '.' else period(n) for n in BASS]
     arp = [period(n) for c in CHORDS for n in c]
@@ -162,16 +184,22 @@ def main():
            f'#LOGO_COLUMNS = {len(logo) // 2}', f'#MARQUEE_LEN = {len(MARQUEE)}', 'DataSection']
     out += data_lines('FontCols', font)
     out += data_lines('LogoCols', logo)
-    out += data_lines('AlienCols', aliens)
-    out += data_lines('UfoCols', ufo)
+    out += data_lines('SpriteCols', aliens + ufo + cannon)
+    objs = objects()
+    out.insert(3, f'#OBJECTS = {len(objs)}')
+    assert all(0 <= v < 256 for o in objs for v in o)
+    out += data_lines('ObjectTable', [v for o in objs for v in o])     # eight bytes an object
+    out += data_lines('DrumPitch', [0, 200, 12])                       # 1 kick (low noise), 2 snare
+    out += data_lines('DrumLevel', [0, 14, 11])
     out += data_lines('MelodyPeriods', words(mel))
     out += data_lines('BassPeriods', words(bass))
-    out += data_lines('ArpPeriods', words(arp))
     out += data_lines('DrumSteps', DRUMS)
     out += ['MarqueeText:'] + [f'  Data.a ' + ', '.join(str(ord(c)) for c in MARQUEE[i:i + 24]) for i in range(0, len(MARQUEE), 24)]
     out += ['  Data.a 0']
-    for label, text in TEXTS.items():
-        out += [f'{label}:', '  Data.a ' + ', '.join(str(ord(c)) for c in text) + ', 0']
+    script = []
+    for x, row, text in TITLES:
+        script += [x, row] + [ord(c) for c in text] + [0]
+    out += data_lines('TitleScript', script + [255])
     out += ['EndDataSection']
     (ROOT / 'demo').mkdir(exist_ok=True)
     (ROOT / 'demo' / 'demo_assets.invaders').write_text('\n'.join(out) + '\n')

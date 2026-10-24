@@ -8,8 +8,8 @@
 ; Command line: a .COM file or a machine ROM to load; --selftest (run the four
 ; diagnostics in the window, save desktop\selftest.png and the verdicts to
 ; desktop\selftest.log, then close); --machine-selftest (run the Space Invaders
-; test ROM 150 frames with "right" held for 30 of them, save
-; desktop\machine-selftest.png and .log, then close).
+; test ROM 150 frames with "right" held for 30 of them - or the ROM and frame
+; count given after it - save desktop\machine-selftest.png and .log, then close).
 
 CompilerIf Defined(GL_ENGINE_DIR$, #PB_Constant) = 0
   #GL_ENGINE_DIR$ = "C:/Users/ajtaj/Desktop/Neon-Arcade-Dispay-Engine/"
@@ -38,8 +38,14 @@ Global Dim Mn$(255)
 Global Dim OpLen.i(255)
 Global NewList Results$()
 Global Folder$
-Global *ScreenTex.GLSprite, *ScreenBuf, MachineAcc.f, MachineMs.q, MachineSelfTest.i, MachineFramesRun.i
+Global *ScreenTex.GLSprite, *ScreenBuf, MachineAcc.f, MachineMs.q, MachineSelfTest.i, MachineFramesRun.i, MachineSelfTestFrames.i = 150
 Declare MachineSlice()
+Global ProfMarks$, ProfLast.q
+Procedure ProfMark(name$)
+  ProfMarks$ + " " + name$ + "=" + Str(ElapsedMilliseconds() - ProfLast)
+  ProfLast = ElapsedMilliseconds()
+EndProcedure
+Global ProfT.q, ProfRun.q, ProfDraw.q, ProfFlip.q, ProfFrames.i, ProfEvents.q, ProfStartup.q, ProfBoot.q = ElapsedMilliseconds()   ; where the window's time goes (self-test log)
 
 Procedure InitDisasm()
   Protected i.i, n.a
@@ -236,15 +242,28 @@ Procedure SizeCanvas()
   GL_ViewportX = 0 : GL_ViewportY = 0 : GL_ViewportW = CanvasW : GL_ViewportH = CanvasH
 EndProcedure
 
+; The frame being drawn, to a PNG. glReadPixels gives rows bottom-up, as a
+; Windows 24-bit image keeps them, so each row is copied straight across
+; (RGBA to BGR) into the image's own buffer - Plot() per pixel took most of
+; a minute for a full window.
 Procedure SaveScreenshot(file$)
-  Protected img.i = CreateImage(#PB_Any, CanvasW, CanvasH, 24), *buf, y.i, x.i, *row.Ascii, pitch.i
+  Protected img.i = CreateImage(#PB_Any, CanvasW, CanvasH, 24), *dst, pitch.i, y.i, x.i, *s.Ascii, *d.Ascii, *row
   Protected *pix = AllocateMemory(CanvasW * CanvasH * 4)
+  glPixelStorei_(#GL_PACK_ALIGNMENT, 1)
   glReadPixels_(0, 0, CanvasW, CanvasH, #GL_RGBA, #GL_UNSIGNED_BYTE, *pix)
   If StartDrawing(ImageOutput(img))
+    *dst = DrawingBuffer() : pitch = DrawingBufferPitch()
     For y = 0 To CanvasH - 1
+      If DrawingBufferPixelFormat() & #PB_PixelFormat_ReversedY
+        *row = *dst + y * pitch               ; bottom-up, like glReadPixels
+      Else
+        *row = *dst + (CanvasH - 1 - y) * pitch
+      EndIf
+      *s = *pix + y * CanvasW * 4
       For x = 0 To CanvasW - 1
-        *row = *pix + ((CanvasH - 1 - y) * CanvasW + x) * 4
-        Plot(x, y, RGB(PeekA(*row), PeekA(*row + 1), PeekA(*row + 2)))
+        *d = *row + x * 3
+        PokeA(*d, PeekA(*s + 2)) : PokeA(*d + 1, PeekA(*s + 1)) : PokeA(*d + 2, PeekA(*s))
+        *s + 4
       Next
     Next
     StopDrawing()
@@ -508,14 +527,17 @@ Procedure Main()
     If fn : CallFunctionFast(fn, -4) : EndIf
     CloseLibrary(lib)
   EndIf
+  ProfMark("dpi")
   CpmInitTests()
   InitDisasm()
   Folder$ = CpmTestFolder()
+  ProfMark("tables")
   ExamineDesktops()
   If w > DesktopWidth(0) * 0.9 : w = DesktopWidth(0) * 0.9 : EndIf
   If h > DesktopHeight(0) * 0.85 : h = DesktopHeight(0) * 0.85 : EndIf
   Gl = OpenGLWindow("Intel 8080 - PureBasic desktop core", w, h,
                     #PB_Window_SystemMenu | #PB_Window_ScreenCentered | #PB_Window_SizeGadget | #PB_Window_MinimizeGadget | #PB_Window_MaximizeGadget)
+  ProfMark("window")
   Win = Util_MainWindowID
   If Gl = 0 Or Win = 0
     MessageRequester("Intel 8080", "The OpenGL window could not be opened.")
@@ -523,15 +545,24 @@ Procedure Main()
   EndIf
   Scale = DisplayScale()
   Neon_UIScale = Scale
+  ProfMark("scale")
   BuildFonts()
+  ProfMark("fonts")
   SizeCanvas()
+  ProfMark("canvas")
   ScreenInit()
   If LCase(arg$) = "--selftest"
     SelfTest = #True
     StartSuite(0)
   ElseIf LCase(arg$) = "--machine-selftest"
+    ; optionally: a ROM (file or folder) and how many frames to run first
     MachineSelfTest = #True
-    LoadMachine(MachineTestRom(), "invaders_test.rom")
+    If ProgramParameter(1) <> ""
+      LoadMachine(ProgramParameter(1), GetFilePart(RTrim(ProgramParameter(1), "\")))
+      If Val(ProgramParameter(2)) > 0 : MachineSelfTestFrames = Val(ProgramParameter(2)) : EndIf
+    Else
+      LoadMachine(MachineTestRom(), "invaders_test.rom")
+    EndIf
   ElseIf arg$ <> ""
     AudioOpen()
     If LCase(GetExtensionPart(arg$)) = "com"
@@ -543,8 +574,11 @@ Procedure Main()
     AudioOpen()
     LoadProgram(Folder$ + CpmTests(0)\File$, CpmTests(0)\Name$)
   EndIf
+  ProfMark("loaded")
   LastMs = ElapsedMilliseconds()
+  ProfStartup = ElapsedMilliseconds() - ProfBoot
   Repeat
+    ProfT = ElapsedMilliseconds()
     Repeat
       ev = WindowEvent()
       Select ev
@@ -562,7 +596,10 @@ Procedure Main()
           EndIf
       EndSelect
     Until ev = 0
+    ProfEvents + ElapsedMilliseconds() - ProfT
+    ProfT = ElapsedMilliseconds()
     If Running : RunSlice(14) : EndIf
+    ProfRun + ElapsedMilliseconds() - ProfT
     now = ElapsedMilliseconds() : dt = (now - LastMs) / 1000.0 : LastMs = now
     down = Bool(MouseDown Or (GetActiveWindow() = Win And (GetAsyncKeyState_(#VK_LBUTTON) & $8000)))
     SetGadgetAttribute(Gl, #PB_OpenGL_SetContext, #True)
@@ -573,7 +610,9 @@ Procedure Main()
     glViewport_(0, 0, CanvasW, CanvasH)
     glClearColor_(Neon_C_BgR, Neon_C_BgG, Neon_C_BgB, 1.0)
     glClear_(#GL_COLOR_BUFFER_BIT)
+    ProfT = ElapsedMilliseconds()
     DrawFrame()
+    ProfDraw + ElapsedMilliseconds() - ProfT
     Neon_ChromeEndFrame()
     If SelfTest And SuiteIndex = -1 And SelfTestDone = 0
       SelfTestDone = 1
@@ -585,6 +624,8 @@ Procedure Main()
         WriteStringN(log, "frames=" + Str(InvFrames) + " RST1=" + Str(M($2000)) + " RST2=" + Str(M($2001)) + " frame=" + Str(M($2002)) +
                           " sprite=" + Str(M($2003)) + " shift=" + Str(M($2010)) + "," + Str(M($2011)) + "," + Str(M($2012)) + "," + Str(M($2013)) +
                           " tone0 period=" + Str(InvTones(0)\Period) + " volume=" + Str(InvTones(0)\Volume))
+        WriteStringN(log, "drawn=" + Str(ProfFrames) + " run_ms=" + Str(ProfRun) + " draw_ms=" + Str(ProfDraw) + " flip_ms=" + Str(ProfFlip) + " events_ms=" + Str(ProfEvents) + " startup_ms=" + Str(ProfStartup) + " total_ms=" + Str(ElapsedMilliseconds() - ProfBoot))
+        WriteStringN(log, "startup:" + ProfMarks$)
         CloseFile(log)
       EndIf
       Quit = #True
@@ -597,11 +638,13 @@ Procedure Main()
       EndIf
       Quit = #True
     EndIf
-    If MachineSelfTest And MachineFramesRun >= 150 And SelfTestDone = 0
+    If MachineSelfTest And MachineFramesRun >= MachineSelfTestFrames And SelfTestDone = 0
       SelfTestDone = 1                  ; one more frame drawn, then captured
       Running = #False
     EndIf
+    ProfT = ElapsedMilliseconds()
     SetGadgetAttribute(Gl, #PB_OpenGL_FlipBuffers, #True)
+    ProfFlip + ElapsedMilliseconds() - ProfT : ProfFrames + 1
     If Running = 0 : Delay(10) : EndIf
   Until Quit
   AudioClose()

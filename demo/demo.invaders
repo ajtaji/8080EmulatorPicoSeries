@@ -1,334 +1,221 @@
 ; PureMetal demo for the Space Invaders board (Intel 8080 at 2 MHz), with
-; music and graphics: a UFO crossing the sky, the PUREMETAL logo in the red
-; band, a formation of aliens marching to the board's four-note footsteps,
-; twinkling stars, a cannon gliding along the ground, a pixel-smooth scrolling
-; marquee, and an original tune in A minor on the four tone channels.
+; music and graphics: the screen wipes in under the PUREMETAL logo and the
+; titles type themselves out; then a formation of aliens marches in a wave to
+; the board's four-note footsteps, a UFO patrols the sky, a cannon the
+; ground, stars twinkle, a ticker types a message, and an original tune in
+; A minor plays on the four tone channels.
 ;
-; Build as an .invaders file; the compiler writes the program ROMs invaders.h,
-; .g, .f and .e in demo_roms\ beside the .hex. It runs on this repository's
-; Space Invaders machine: desktop\i8080desk.exe (Open... the demo_roms
-; folder), desktop\invaders_cli.exe, and the Pico W build (tools/embed_rom.py
-; demo\demo_roms, then src\invaders.picow).
+; Build as an .invaders file (compiler at 9fda90ac8 or later): the compiler
+; writes the program ROMs invaders.h, .g, .f and .e in demo_roms\ beside the
+; .hex. tools\build_demo.ps1 builds it and runs it headless. Run it on this
+; repository's Space Invaders machine: the desktop window (Open... the
+; demo_roms folder), desktop\invaders_cli.exe, or the Pico W build
+; (py -3 tools/embed_rom.py demo\demo_roms, then src\invaders.picow).
 ;
-; The screen: video RAM is column-major. Byte $2400 + x*32 + b holds pixels
+; THE BUDGETS. A frame is 33,333 cycles and a byte moved by a loop costs about
+; 600 of them, so everything is spread over frames as the original game does
+; it: one alien moves a frame, the opening wipe clears one column a frame.
+; The program ROM is 8 KB and each statement here compiles to 20-80 bytes, so
+; the scene is data: tools/make_demo_assets.py writes a table of moving
+; objects (position, step, limits, when they move, animation) that one loop
+; runs, and the music writes only the tone registers that change.
+;
+; THE SCREEN. Video RAM is column-major: byte $2400 + x*32 + b holds pixels
 ; 8b .. 8b+7 of column x, bit 0 the lowest, counting up from the bottom of
-; the upright 224 x 256 screen. Every graphic is stored as column bytes, so
-; an 8-pixel-tall glyph at a whole byte row is eight byte writes. The
-; cabinet's overlay colours rows 32-63 from the top red (bytes 24-27) and
-; rows 184-239 green (bytes 2-8).
+; the upright 224 x 256 screen; every graphic is stored as column bytes. The
+; cabinet's overlay colours bytes 24-27 red and bytes 2-8 green.
 ;
-; The tone device (this machine's, not the original board's): channel c at
-; port $10 + 4c: +0 period low, +1 period high, +2 volume 0-15, +3 wave
-; (0 square, 1 pulse, 2 triangle, 3 noise); 62500 / (period + 1) Hz.
+; THE SOUND. This machine's tone device: channel c at port $10 + 4c: +0 period
+; low, +1 period high, +2 volume 0-15, +3 wave (0 square, 1 pulse, 2 triangle,
+; 3 noise); 62500 / (period + 1) Hz. And the board's own: OUT 5 bits 0-3, the
+; fleet's footsteps.
 
 XIncludeFile "demo_assets.invaders"
 
 #VRAM = $2400
-#ROW_TOP = 30            ; the title
-#ROW_UFO = 28
-#ROW_LOGO = 25           ; two bytes: 25 and 26, in the red band
-#ROW_STARS_HI = 22       ; stars between the logo and the aliens
-#ROW_ALIENS = 19         ; the formation's upper row; the lower is two below
-#ROW_STARS_LO = 9
-#ROW_CANNON = 7          ; the green band
-#ROW_MARQUEE = 4
-#ROW_FOOT = 0            ; below the ground line, green between columns 16 and 133
+#ROW_LOGO = 25           ; bytes 25 and 26, in the red band
+#ROW_TICKER = 4
 
-Global frame.a, seen.a, missed.u, loops.u
-Global stepTick.a, tuneStep.a, melVol.a, drumVol.a, arpIx.a
-Global marqPos.u, marqCol.a
-Global alienX.a, alienDir.a, alienRow.a, alienAnim.a, fleetNote.a, fleetOff.a
-Global ufoX.u, ufoWait.u, ufoOn.a
-Global cannonX.a, cannonDir.a
-Global Dim starX.a(12)
-Global Dim starRow.a(12)
-Global Dim starBit.a(12)
+Global frame.a
+Global seen.u, loops.u, phase.u, i.u, v.u
+Global wipeX.u, textSrc.u, textX.u, textRow.u, textLine.u
+Global stepTick.u, tuneStep.u, melVol.u, drumVol.u, fleetNote.u, fleetOff.u
+Global tickX.u, tickPos.u
+; What changes per object lives in RAM - its distance from its starting
+; column (RAM starts at zero) and its direction (0 right) - the rest is read from ObjectTable
+; (eight bytes an object: x, row, column data, columns, step, left and right
+; limits, animation stride).
+Global Dim ObjX.u(#OBJECTS)
+Global Dim ObjDir.u(#OBJECTS)
+Global Dim ObjFrame.u(#OBJECTS)
+Global t.u, ox.u, of.u
 
 ProcedureInterrupt RST2()
   frame = frame + 1                    ; the vertical blank
+  stepTick = stepTick + 1              ; the music's clock
 EndProcedure
 
-; ---------------------------------------------------------------- drawing
-Procedure PutChar(x.u, row.a, c.a)
-  Protected src.u, p.u, i.a
-  src = ?FontCols + ((c - 32) << 3)
+; n column bytes from src into column x upward at byte row `row`, one
+; column to the right each.
+Procedure Blit(x.u, row.u, src.u, n.u)
+  Protected p.u
   p = #VRAM + (x << 5) + row
-  For i = 0 To 7
-    PokeA(p, PeekA(src + i))
+  While n
+    PokeA(p, PeekA(src))
     p = p + 32
-  Next
-EndProcedure
-
-; Zero-terminated text at src, eight columns a character.
-Procedure PutText(x.u, row.a, src.u)
-  Protected c.a
-  c = PeekA(src)
-  While c
-    PutChar(x, row, c)
-    x = x + 8
     src = src + 1
-    c = PeekA(src)
+    n = n - 1
   Wend
 EndProcedure
 
-Procedure ClearRow(row.a)
-  Protected p.u, x.a
-  p = #VRAM + row
-  For x = 0 To 223
-    PokeA(p, 0)
-    p = p + 32
-  Next
+Procedure.u Word(adr.u)
+  ProcedureReturn PeekA(adr) | (PeekA(adr + 1) << 8)
 EndProcedure
 
-Procedure DrawLogo()
-  Protected p.u, src.u, i.a
-  p = #VRAM + (40 << 5) + #ROW_LOGO
-  src = ?LogoCols
-  For i = 1 To #LOGO_COLUMNS
-    PokeA(p, PeekA(src))
-    PokeA(p + 1, PeekA(src + 1))
-    src = src + 2
-    p = p + 32
+; ---------------------------------------------------------------- opening
+; One column a frame: cleared, the ground line drawn, and inside the logo's
+; span the logo's column - the logo wipes in with the screen.
+Procedure WipeStep()
+  Protected p.u, k.u
+  p = #VRAM + (wipeX << 5)
+  For k = 0 To 31
+    PokeA(p + k, 0)
   Next
+  PokeA(p + 1, $80)                    ; the ground
+  If wipeX >= 40 And wipeX < 40 + #LOGO_COLUMNS
+    k = ?LogoCols + ((wipeX - 40) << 1)
+    PokeA(p + #ROW_LOGO, PeekA(k))
+    PokeA(p + #ROW_LOGO + 1, PeekA(k + 1))
+  EndIf
+  wipeX = wipeX + 1
+  If wipeX = 224
+    phase = 1 : textSrc = ?TitleScript
+  EndIf
 EndProcedure
 
-; An alien with two empty columns either side, so a move of two columns
-; leaves nothing behind.
-Procedure DrawAlien(x.u, row.a, kind.a)
-  Protected p.u, src.u, i.a
-  src = ?AlienCols + (kind << 3)
-  p = #VRAM + ((x - 2) << 5) + row
-  PokeA(p, 0) : p = p + 32
-  PokeA(p, 0) : p = p + 32
-  For i = 0 To 7
-    PokeA(p, PeekA(src + i))
-    p = p + 32
-  Next
-  PokeA(p, 0) : p = p + 32
-  PokeA(p, 0)
-EndProcedure
-
-; The UFO with one empty column behind it (it moves right a column a frame).
-Procedure DrawUfo(x.u)
-  Protected p.u, i.a
-  p = #VRAM + (x << 5) + #ROW_UFO
-  PokeA(p, 0)
-  p = p + 32
-  For i = 0 To 15
-    PokeA(p, PeekA(?UfoCols + i))
-    p = p + 32
-  Next
-EndProcedure
-
-; The player's cannon: a 9-column shape with an empty column either side.
-Procedure DrawCannon(x.u)
-  Protected p.u
-  p = #VRAM + ((x - 1) << 5) + #ROW_CANNON
-  PokeA(p, 0) : p = p + 32
-  PokeA(p, $07) : p = p + 32
-  PokeA(p, $0F) : p = p + 32
-  PokeA(p, $0F) : p = p + 32
-  PokeA(p, $0F) : p = p + 32
-  PokeA(p, $7F) : p = p + 32
-  PokeA(p, $0F) : p = p + 32
-  PokeA(p, $0F) : p = p + 32
-  PokeA(p, $0F) : p = p + 32
-  PokeA(p, $07) : p = p + 32
-  PokeA(p, 0)
+; Then the titles, typed a character every second frame from TitleScript:
+; x, byte row, the characters, 0; 255 ends it.
+Procedure TypeStep()
+  v = PeekA(textSrc)
+  If v = 255
+    phase = 2
+  ElseIf textX = 0
+    textX = v : textRow = PeekA(textSrc + 1) : textSrc = textSrc + 2
+  ElseIf v
+    Blit(textX, textRow, ?FontCols + ((v - 32) << 3), 8)
+    textX = textX + 8 : textSrc = textSrc + 1
+  Else
+    textX = 0 : textSrc = textSrc + 1
+  EndIf
 EndProcedure
 
 ; ---------------------------------------------------------------- the scene
-Procedure Aliens()
-  Protected i.a, x.u
-  alienAnim = 1 - alienAnim
-  If alienDir
-    alienX = alienX + 2
-    If alienX >= 120 : alienDir = 0 : EndIf
+; Object i takes a step, turns at its limits, flips its animation and is
+; drawn. The first alien's step is the fleet's footstep.
+Procedure MoveObject()
+  t = ?ObjectTable + (i << 3)
+  ox = PeekA(t) + ObjX(i)
+  If ObjDir(i) = 0
+    ox = ox + PeekA(t + 4)
+    If ox >= PeekA(t + 6) : ObjDir(i) = 1 : EndIf
   Else
-    alienX = alienX - 2
-    If alienX <= 10
-      alienDir = 1
-      ; down a row at the left edge; back to the top from near the ground
-      ClearRow(alienRow)
-      ClearRow(alienRow - 2)
-      alienRow = alienRow - 1
-      If alienRow < 12 : alienRow = #ROW_ALIENS : EndIf
-    EndIf
+    ox = ox - PeekA(t + 4)
+    If ox <= PeekA(t + 5) : ObjDir(i) = 0 : EndIf
   EndIf
-  x = alienX
-  For i = 0 To 5
-    DrawAlien(x, alienRow, alienAnim)
-    DrawAlien(x, alienRow - 2, 2 + alienAnim)
-    x = x + 16
-  Next
-  ; the board's four-note march (OUT 5 bits 0-3), one note a step
-  i8080_out(5, 1 << fleetNote)
-  fleetNote = (fleetNote + 1) & 3
-  fleetOff = 2
-EndProcedure
-
-Procedure Stars()
-  Protected i.a, p.u
-  For i = 0 To 11
-    If ((frame + i * 5) & 15) = 0
-      p = #VRAM + (starX(i) << 5) + starRow(i)
-      PokeA(p, PeekA(p) ! starBit(i))
-    EndIf
-  Next
-EndProcedure
-
-Procedure Marquee()
-  Protected p.u, x.a, c.a
-  ; every column one to the left ...
-  p = #VRAM + #ROW_MARQUEE
-  For x = 0 To 222
-    PokeA(p, PeekA(p + 32))
-    p = p + 32
-  Next
-  ; ... and the text's next column at the right edge
-  c = PeekA(?MarqueeText + marqPos)
-  PokeA(p, PeekA(?FontCols + ((c - 32) << 3) + marqCol))
-  marqCol = marqCol + 1
-  If marqCol = 8
-    marqCol = 0
-    marqPos = marqPos + 1
-    If PeekA(?MarqueeText + marqPos) = 0 : marqPos = 0 : EndIf
+  ObjX(i) = ox - PeekA(t)
+  of = PeekA(t + 7) - ObjFrame(i)
+  ObjFrame(i) = of
+  Blit(ox, PeekA(t + 1), ?SpriteCols + PeekA(t + 2) + of, PeekA(t + 3))
+  If i = 0
+    i8080_out(5, 1 << fleetNote)
+    fleetNote = (fleetNote + 1) & 3
+    fleetOff = 3
   EndIf
 EndProcedure
 
-Procedure Ufo()
-  If ufoOn
-    DrawUfo(ufoX)
-    ufoX = ufoX + 1
-    If ufoX > 207
-      ClearRow(#ROW_UFO)
-      ufoOn = 0 : ufoWait = 600
-      i8080_out(3, 0)
-    EndIf
-  Else
-    ufoWait = ufoWait - 1
-    If ufoWait = 0
-      ufoOn = 1 : ufoX = 0
-      i8080_out(3, 1)                  ; the UFO's warble while it flies
-    EndIf
-  EndIf
+; What moves on this pass of the main loop: alien (pass mod 16) - so the
+; formation turns in a wave, one alien a pass - and on other passes the UFO
+; or the cannon. Counting passes, not frames, keeps the formation together
+; even when a pass runs late.
+Procedure Objects()
+  i = loops & 15
+  If i < 12 : MoveObject() : EndIf
+  If (loops & 7) = 1 : i = 12 : MoveObject() : EndIf
+  If (loops & 3) = 3 : i = 13 : MoveObject() : EndIf
 EndProcedure
 
-Procedure Cannon()
-  If cannonDir
-    cannonX = cannonX + 1
-    If cannonX >= 210 : cannonDir = 0 : EndIf
-  Else
-    cannonX = cannonX - 1
-    If cannonX <= 4 : cannonDir = 1 : EndIf
+Procedure TickerStep()
+  v = PeekA(?MarqueeText + tickPos)
+  If v = 0
+    tickPos = 0 : v = PeekA(?MarqueeText)
   EndIf
-  DrawCannon(cannonX)
+  Blit(tickX, #ROW_TICKER, ?FontCols + ((v - 32) << 3), 8)
+  tickPos = tickPos + 1
+  tickX = tickX + 8
+  If tickX >= 224 : tickX = 0 : EndIf
+  Blit(tickX, #ROW_TICKER, ?FontCols, 8)          ; a blank ahead of the next character
 EndProcedure
 
 ; ---------------------------------------------------------------- music
-Procedure.u Period(table.u, index.a)
-  ProcedureReturn PeekA(table + (index << 1)) | (PeekA(table + (index << 1) + 1) << 8)
-EndProcedure
-
 Procedure MusicStep()
-  Protected v.u, d.a
-  v = Period(?MelodyPeriods, tuneStep)
+  v = Word(?MelodyPeriods + (tuneStep << 1))
   If v
-    i8080_out($10, v & 255) : i8080_out($11, v >> 8)
-    melVol = 11
+    i8080_out($10, v & 255) : i8080_out($11, v >> 8) : melVol = 11
   EndIf
-  v = Period(?BassPeriods, tuneStep)
+  v = Word(?BassPeriods + (tuneStep << 1))
   If v
     i8080_out($14, v & 255) : i8080_out($15, v >> 8)
   EndIf
-  d = PeekA(?DrumSteps + tuneStep)
-  If d = 1                             ; kick: low noise
-    i8080_out($1C, 200) : i8080_out($1D, 0) : drumVol = 14
-  ElseIf d = 2                         ; snare: high noise
-    i8080_out($1C, 12) : i8080_out($1D, 0) : drumVol = 11
+  v = PeekA(?DrumSteps + tuneStep)
+  If v
+    i8080_out($1C, PeekA(?DrumPitch + v)) : drumVol = PeekA(?DrumLevel + v)
   EndIf
   tuneStep = (tuneStep + 1) & 63
 EndProcedure
 
+; The tune's frame: the step every eighth frame, the lead's fade, the drums'
+; decay.
 Procedure Music()
-  Protected v.u, chord.a
-  stepTick = stepTick + 1
-  If stepTick >= 8
-    stepTick = 0
+  If stepTick >= 8                     ; counted by RST2: real frames, even after a late pass
+    stepTick = stepTick - 8
     MusicStep()
   EndIf
-  ; the lead fades a little through each note
-  If melVol > 5 And (stepTick & 1)
-    melVol = melVol - 1
-  EndIf
+  If melVol > 5 And (stepTick & 1) : melVol = melVol - 1 : EndIf
   i8080_out($12, melVol)
-  ; the drums decay quickly
-  If drumVol > 0
-    If drumVol > 2 : drumVol = drumVol - 3 : Else : drumVol = 0 : EndIf
-  EndIf
+  If drumVol > 2 : drumVol = drumVol - 3 : Else : drumVol = 0 : EndIf
   i8080_out($1E, drumVol)
-  ; the arpeggio: the chord's three notes in turn, two frames each
-  If (frame & 1) = 0
-    chord = ((tuneStep - 1) & 63) >> 4
-    v = Period(?ArpPeriods, chord * 3 + arpIx)
-    i8080_out($18, v & 255) : i8080_out($19, v >> 8)
-    arpIx = arpIx + 1
-    If arpIx = 3 : arpIx = 0 : EndIf
+EndProcedure
+
+; ---------------------------------------------------------------- the loop
+Procedure Begin()
+  i8080_out($17, 2) : i8080_out($16, 13) : i8080_out($1F, 3)   ; a triangle bass at 13, noise drums
+EndProcedure
+
+Procedure Scene()
+  Music()
+  If phase = 0
+    WipeStep()
+  ElseIf phase = 1
+    If seen & 1 : TypeStep() : EndIf
+  Else
+    Objects()
+    If (seen & 7) = 4 : TickerStep() : EndIf
   EndIf
-EndProcedure
-
-Procedure MusicBegin()
-  i8080_out($13, 0) : i8080_out($17, 2) : i8080_out($1B, 1) : i8080_out($1F, 3)   ; square, triangle, pulse, noise
-  i8080_out($16, 13) : i8080_out($1A, 4)                                       ; bass and arpeggio levels
-EndProcedure
-
-; ---------------------------------------------------------------- start
-Procedure Setup()
-  Protected a.u, i.a
-  For a = $2400 To $3FFF
-    PokeA(a, 0)
-  Next
-  PutText(36, #ROW_TOP, ?TextTop)
-  DrawLogo()
-  PutText(32, #ROW_LOGO - 2, ?TextBoard)
-  ; the ground: one line of pixels just above the footer
-  a = #VRAM + 1
-  For i = 0 To 223
-    PokeA(a, $80)
-    a = a + 32
-  Next
-  PutText(24, #ROW_FOOT, ?TextFoot)
-  ; twelve stars, above and below the formation's sweep
-  For i = 0 To 11
-    starX(i) = 9 + i * 18
-    If i & 1 : starRow(i) = #ROW_STARS_HI : Else : starRow(i) = #ROW_STARS_LO : EndIf
-    starBit(i) = 1 << ((i * 3) & 7)
-  Next
-  alienX = 10 : alienDir = 1 : alienRow = #ROW_ALIENS
-  cannonX = 100 : cannonDir = 1
-  ufoWait = 120
-  MusicBegin()
+  If fleetOff
+    fleetOff = fleetOff - 1
+    If fleetOff = 0 : i8080_out(5, 0) : EndIf
+  EndIf
 EndProcedure
 
 Procedure Main()
-  Setup()
+  Begin()
   EnableInterrupts
   Repeat
-    While frame = seen : Wend          ; once a frame
-    If (frame - seen) > 1 : missed = missed + 1 : EndIf
+    While frame = (seen & 255) : Wend   ; once a frame
     seen = frame
     loops = loops + 1
     i8080_out(6, 0)                    ; the watchdog
-    Music()
-    Marquee()
-    If (seen & 7) = 0 : Aliens() : EndIf
-    If fleetOff
-      fleetOff = fleetOff - 1
-      If fleetOff = 0 : i8080_out(5, 0) : EndIf
-    EndIf
-    Ufo()
-    If seen & 1 : Cannon() : EndIf
-    Stars()
+    Scene()
   ForEver
 EndProcedure
 

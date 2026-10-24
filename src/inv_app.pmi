@@ -149,6 +149,17 @@ Procedure AppStart()
   AppNext = Micros() : AppReport = AppNext
 EndProcedure
 
+; Video RAM's checksum (h = h * 31 + byte, 32 bits): desktop\invaders_cli.exe
+; --checksum prints the same, so a ROM's frame 1200 can be compared.
+Global VramSum.l, VramAdr.i
+Procedure AppVramSum()
+  VramSum = 0
+  For VramAdr = $2400 To $3FFF
+    VramSum = VramSum * 31 + M(VramAdr)
+  Next
+  Say("INVADERS_VRAM frame=") : Num(InvFrames) : Say(" sum=") : Num(VramSum) : Eol()
+EndProcedure
+
 ; After a frame: the picture, the test check, pacing to 60 Hz, the status line.
 Procedure AppAfterFrame()
   AppT = Micros() - AppT
@@ -159,6 +170,7 @@ Procedure AppAfterFrame()
   CompilerIf #INV_TEST = 1
     If InvFrames = 120 : AppCheckTest() : EndIf
   CompilerEndIf
+  If InvFrames = 1200 : AppVramSum() : EndIf
   ; 60 Hz: 16,667 / 16,666 / 16,667 us.
   AppStep = AppStep + 1
   If AppStep = 3 : AppStep = 0 : EndIf
