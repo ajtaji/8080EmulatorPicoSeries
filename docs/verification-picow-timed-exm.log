@@ -1,0 +1,112 @@
+=== JOB -Source Diagnostics/verify-timed.picow -Output Diagnostics/verify-timed.uf2 -Port COM7 -Seconds 780
+8080 verification clk_sys kHz=200000 timing=1 asm_tail=1 memmap=0
+  FAIL undocumented opcodes got=$0833 want=$0818
+  FAIL LHLD wraps, SPHL, PCHL got=$5566 want=$5566
+API/interrupt/flag checks=14875 failures=2 FAIL
+*** TST8080
+MICROCOSM ASSOCIATES 8080/8085 CPU DIAGNOSTIC
+ VERSION 1.0  (C) 1980
+ CPU IS OPERATIONAL
+TST8080 output PASS cycles=4924 reference=4924 count PASS ms=0
+*** 8080PRE
+8080 Preliminary tests complete
+8080PRE output PASS cycles=7817 reference=7817 count PASS ms=0
+*** CPUTEST
+<00><00><00><00><00><00>
+DIAGNOSTICS II V1.2 - CPU TEST
+COPYRIGHT (C) 1981 - SUPERSOFT ASSOCIATES
+ABCDEFGHIJKLMNOPQRSTUVWXYZ
+CPU IS 8080/8085
+BEGIN TIMING TEST
+<07><07>END TIMING TEST
+CPU TESTS OK
+CPUTEST output PASS cycles=255653383 reference=255653383 count PASS ms=5718
+*** 8080EXM
+8080 instruction exerciser
+dad <b,d,h,sp>................  [progress 400000376 ms=11064]
+  [progress 800000743 ms=22128]
+  PASS! crc is:14474ba6
+aluop nn......................  [progress 1200001179 ms=33109]
+  [progress 1600001604 ms=43648]
+  PASS! crc is:9e922f9e
+aluop <b,c,d,e,h,l,m,a>.......  [progress 2000001975 ms=54403]
+  [progress 2400002425 ms=65244]
+  [progress 2800002854 ms=76084]
+  [progress 3200003245 ms=86924]
+  [progress 3600003671 ms=97764]
+  [progress 4000004142 ms=108604]
+  [progress 4400004528 ms=119444]
+  [progress 4800005027 ms=130284]
+  [progress 5200005463 ms=141125]
+  [progress 5600005973 ms=151965]
+  [progress 6000006321 ms=162805]
+  [progress 6400006839 ms=173645]
+  [progress 6800007219 ms=184485]
+  [progress 7200007615 ms=195326]
+  [progress 7600008030 ms=206166]
+  [progress 8000008468 ms=217006]
+  [progress 8400008902 ms=227846]
+  [progress 8800009292 ms=238686]
+  [progress 9200009795 ms=249527]
+  [progress 9600010209 ms=260367]
+  [progress 10000010558 ms=271207]
+  [progress 10400010951 ms=282047]
+  [progress 10800011366 ms=292887]
+  [progress 11200011797 ms=303727]
+  [progress 11600012281 ms=314567]
+  [progress 12000012735 ms=325407]
+  [progress 12400013122 ms=336248]
+  [progress 12800013576 ms=347088]
+  [progress 13200014008 ms=357928]
+  [progress 13600014419 ms=368768]
+  [progress 14000014785 ms=379609]
+  [progress 14400015198 ms=390449]
+  [progress 14800015617 ms=401289]
+  [progress 15200016050 ms=412129]
+  [progress 15600016518 ms=422969]
+  [progress 16000016895 ms=433810]
+  [progress 16400017312 ms=444650]
+  [progress 16800017717 ms=455490]
+  [progress 17200018154 ms=466330]
+  [progress 17600018584 ms=477170]
+  [progress 18000018997 ms=488010]
+  [progress 18400019384 ms=498850]
+  [progress 18800019845 ms=509691]
+  [progress 19200020255 ms=520531]
+  [progress 19600020651 ms=531371]
+  [progress 20000021058 ms=542211]
+  [progress 20400021458 ms=553052]
+  [progress 20800021893 ms=563892]
+  [progress 21200022318 ms=574733]
+  [progress 21600022725 ms=585574]
+  PASS! crc is:cf762c86
+<daa,cma,stc,cmc>.............  [progress 22000023158 ms=596278]
+  [progress 22400023546 ms=606697]
+  [progress 22800023929 ms=617115]
+  PASS! crc is:bb3f030c
+<inr,dcr> a...................  PASS! crc is:adb6460e
+<inr,dcr> b...................  PASS! crc is:83ed1345
+<inx,dcx> b...................  PASS! crc is:f79287cd
+<inr,dcr> c...................  PASS! crc is:e5f6721b
+<inr,dcr> d...................  [progress 23200024328 ms=627547]
+  PASS! crc is:15b5579a
+<inx,dcx> d...................  PASS! crc is:7f4e2501
+<inr,dcr> e...................  PASS! crc is:cf2ab396
+<inr,dcr> h...................  PASS! crc is:12b2952c
+<inx,dcx> h...................  PASS! crc is:9f2b23c0
+<inr,dcr> l...................  PASS! crc is:ff57d356
+<inr,dcr> m...................  PASS! crc is:92e963bd
+<inx,dcx> sp..................  PASS! crc is:d5702fab
+lhld nnnn.....................  PASS! crc is:a9c3d5cb
+shld nnnn.....................  PASS! crc is:e8864f26
+lxi <b,d,h,sp>,nnnn...........  PASS! crc is:fcf46e12
+ldax <b,d>....................  PASS! crc is:2b821d5f
+mvi <b,c,d,e,h,l,m,a>,nn......  PASS! crc is:eaa72044
+mov <bcdehla>,<bcdehla>.......  [progress 23600024722 ms=638019]
+  PASS! crc is:10b58cee
+sta nnnn / lda nnnn...........  PASS! crc is:ed57af72
+<rlc,rrc,ral,rar>.............  PASS! crc is:e0d89235
+stax <b,d>....................  PASS! crc is:2b0471e9
+Tests complete
+8080EXM output PASS cycles=23803381171 reference=23803381171 count PASS ms=643404
+verification complete failures=2 FAIL

@@ -8,7 +8,39 @@ call per guest instruction. It is a core for a machine to sit on (Space
 Invaders, a CP/M system, ...): memory, ports, interrupts and timing are all
 reachable through the API below.
 
-<!-- MEASURED -->
+## Measured speed
+
+Physical boards, 2026-10-23. Each sample runs exactly 1,000,000 guest
+instructions with cycle accounting off (`#CPU_TIMING = 0`, assembly tail);
+USB and setup are outside the timed interval. Raw logs are in `docs/`.
+
+| Mix | Pico W, RP2040 at 200 MHz | Pico 2 W, RP2350 at 150 MHz |
+|---|---:|---:|
+| DCR C / JNZ | **4.88 M instructions/s** | 3.62 M instructions/s |
+| ADI / XRI / RLC / RAR / ADD / DAA | **4.43 M** | 3.58 M |
+| MOV A,M / STAX D / INX H / INX D / DCR C / JNZ (copy) | **6.70 M** | 5.59 M |
+| CALL / PUSH B / PUSH H / POP H / POP B / RET | **3.79 M** | 3.15 M |
+| Real code: CPUTEST (34.0 M instructions) | 5.94 M | 4.67 M |
+| Real code: 8080EXM (2.92 G instructions) | 4.56 M | 3.80 M |
+
+For scale: 8080EXM averages 8.15 cycles per instruction, so a 2 MHz 8080
+runs it at about 0.245 M instructions/s; the Pico W runs it about 18 times
+faster (an 8080 at roughly 37 MHz). These are instruction rates for these
+mixes, not a guaranteed clock. The RP2040 figures are after tuning: the first version ran
+the four mixes at 3.71 / 3.87 / 5.33 / 3.31 M (`docs/benchmark-baseline.log`);
+`docs/benchmark-layouts.log` has the six register layouts measured on the
+way. The Pico 2 W runs the same generated handlers with the RP2350 layout of
+the PureMetal 6502 core and was not tuned separately.
+
+Configuration costs, measured: the plain PureMetal `Goto` tail is about 27%
+slower than the assembly tail on real code (Pico W CPUTEST 7.84 s against
+5.72 s); the page map (`#CPU_MEMMAP = 1`) costs about 1% on CPUTEST but about
+50% on the memory-heavy 8080EXM (Pico 2 W: 1,160 s against 769 s), since
+every data access becomes a procedure call; timing costs nothing measurable.
+
+The demo uses 37 KB of flash; 21.5 KB of its code runs from SRAM. Guest
+memory is 64 KiB, the dispatch table 1 KiB.
+
 
 ## Files
 
@@ -107,7 +139,85 @@ and anything outside the CPU.
 
 ## Verification on the board
 
-<!-- VERIFIED -->
+Everything below ran on the physical boards; the expected values come from
+the published reference, not from a model of this core.
+
+**CP/M diagnostics** under a BDOS stub laid out exactly as the reference
+harness (`OUT 0` at $0000 ends a program, `OUT 1` / `RET` at $0005 is the
+BDOS), so every count must match the reference to the instruction or cycle:
+
+| Program | Instructions | Cycles |
+|---|---:|---:|
+| TST8080 | 651 | 4,924 |
+| 8080PRE | 1,061 | 7,817 |
+| CPUTEST | 33,971,311 | 255,653,383 |
+| 8080EXM (25 CRC groups against silicon) | 2,919,050,698 | 23,803,381,171 |
+
+**Directed checks** (8,731 per run): run budgets of 0 and below, HLT in both
+timing modes, RST injection and its stack frame, the one-instruction EI
+delay, DI, non-RST opcodes refused, IN/OUT through the hooks, `CpuYield`,
+every one of the 256 PSW values through `CpuSetFlags`/`CpuFlags` and through
+POP PSW / PUSH PSW, all eight conditions of Jcc, Ccc and Rcc under every PSW
+(taken and not, with their cycle counts in the timed builds), the twelve
+undocumented opcodes, self-modifying code, XTHL/XCHG/SPHL/PCHL and
+LHLD/SHLD wrapping at $FFFF, and with the page map: ROM pages, trapped pages
+and INR M through both traps.
+
+| Build | Pico W (COM7) | Pico 2 W (COM6) |
+|---|---|---|
+| fast: untimed, assembly tail | all checks, all four programs, instruction counts exact | all checks, all four programs, instruction counts exact |
+| timed, assembly tail | all four programs, cycle counts exact (8080EXM 643 s); all checks | - |
+| timed + page map, assembly tail | - | all four programs, cycle counts exact (8080EXM 1,160 s); all checks |
+| untimed + page map, assembly tail | all checks; TST8080, 8080PRE, CPUTEST exact | - |
+| timed, plain PureMetal `Goto` tail | all checks; TST8080, 8080PRE, CPUTEST, cycle counts exact | all four programs, cycle counts exact (8080EXM 943 s); all checks |
+
+The Pico W's lease on the shared bench is limited to 15 minutes, so the
+8080EXM runs of its page-map and plain-tail builds were done on the Pico 2 W,
+whose builds run the same generated handlers. In the first timed runs two
+directed checks failed because the test gave two HLT-terminated programs a
+budget of 100, which a timed build counts in cycles and those programs need
+126 and 121; the budgets were raised to 1000 and the directed checks
+re-run on both boards (`docs/verification-*-timed*.log`). The cycle counts
+of all four programs were exact in those runs.
+
+Per-instruction test vectors: no published set exists for the 8080
+(SingleStepTests covers the Z80 and 8088 but not the 8080); 8080EXM's CRCs
+over every instruction group against real silicon take that role.
+
+The desktop core (below) runs the same four programs with both instruction
+and cycle counts exact.
+
+
+## Desktop version
+
+`desktop/` is the same 8080 in PureBasic (C back end, x64), generated by
+`tools/generate_desktop.py` from the same opcode table, with a debugger
+window drawn by the Neon Arcade Display Engine.
+
+| File | What |
+|---|---|
+| `desktop/i8080core.pbi` | The core (generated). `#CPU_DISPATCH` 0: computed goto through the C back end's labels-as-values; 1: a table of procedure addresses. Budgets in cycles and counts instructions too |
+| `desktop/cpm.pbi` | The CP/M test machine: BDOS stub, `.COM` loader, the reference counts |
+| `desktop/verify_desktop.pb` | Console verification and benchmark |
+| `desktop/i8080desk.pb` | The window: registers and flags, disassembly at PC, memory view, CP/M console, run / pause / step / step 100 / reset, a breakpoint, the four test programs and "Run all suites" with verdicts, the live speed |
+
+```powershell
+cd desktop
+& 'C:\Program Files\PureBasic\Compilers\pbcompilerc.exe' verify_desktop.pb /CONSOLE /OPTIMIZER /EXE verify_desktop.exe
+& 'C:\Program Files\PureBasic\Compilers\pbcompilerc.exe' i8080desk.pb /THREAD /DPIAWARE /OPTIMIZER `
+    /CONSTANT 'GL_ENGINE_DIR$=C:/Users/ajtaj/Desktop/Neon-Arcade-Dispay-Engine/' /EXE i8080desk.exe
+```
+
+`i8080desk.exe` takes a `.COM` file to load, or `--selftest` (runs the four
+programs in the window, writes `selftest.log` and `selftest.png`, closes).
+The test programs come from `tools/fetch_tests.py` as for the boards.
+
+Measured on this PC (one run each; desktop clocks vary): both dispatch forms
+pass all 8,721 desktop directed checks and the four programs with instruction
+and cycle counts exact. Computed goto runs 8080EXM in 5.5 s (about 525 M
+instructions/s) against 8.3 s (351 M) for the procedure table, and is 1.3-1.4
+times faster on every mix, so the window uses it. `desktop/selftest.png` is
+the window's own capture of its suite results.
 
 ## Build
 

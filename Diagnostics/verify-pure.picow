@@ -2,4 +2,5 @@
 #CPU_TIMING = 1
 #CPU_ASM_TAIL = 0
 #CPU_MEMMAP = 0
+#CPM_EXM = 0
 XIncludeFile "verify_body.pico"

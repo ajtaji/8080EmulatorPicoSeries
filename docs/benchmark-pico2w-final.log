@@ -1,0 +1,6 @@
+8080 PureMetal Pico 2 W clk_sys kHz=150000
+sum test A=55 instructions=33 PASS
+register/branch DCR/JNZ instructions=1000000 us=276353 instructions/s=3618560
+arithmetic ADI/XRI/RLC/RAR/ADD/DAA instructions=1000000 us=279049 instructions/s=3583600
+memory copy MOV/STAX/INX/DCR/JNZ instructions=1000000 us=179040 instructions/s=5585344
+call/stack CALL/PUSH/POP/RET instructions=1000000 us=317144 instructions/s=3153141

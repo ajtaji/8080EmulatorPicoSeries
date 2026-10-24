@@ -1,0 +1,80 @@
+=== JOB -Source Diagnostics/verify-fast.pico2w -Output Diagnostics/verify-fast-pico2w.uf2 -Port COM6 -Seconds 1500
+8080 verification clk_sys kHz=150000 timing=0 asm_tail=1 memmap=0
+API/interrupt/flag checks=8731 failures=0 PASS
+*** TST8080
+MICROCOSM ASSOCIATES 8080/8085 CPU DIAGNOSTIC
+ VERSION 1.0  (C) 1980
+ CPU IS OPERATIONAL
+TST8080 output PASS instructions=651 reference=651 count PASS ms=0
+*** 8080PRE
+8080 Preliminary tests complete
+8080PRE output PASS instructions=1061 reference=1061 count PASS ms=0
+*** CPUTEST
+<00><00><00><00><00><00>
+DIAGNOSTICS II V1.2 - CPU TEST
+COPYRIGHT (C) 1981 - SUPERSOFT ASSOCIATES
+ABCDEFGHIJKLMNOPQRSTUVWXYZ
+CPU IS 8080/8085
+BEGIN TIMING TEST
+<07><07>END TIMING TEST
+CPU TESTS OK
+CPUTEST output PASS instructions=33971311 reference=33971311 count PASS ms=7269
+*** 8080EXM
+8080 instruction exerciser
+dad <b,d,h,sp>................  [progress 100000000 ms=26880]
+  PASS! crc is:14474ba6
+aluop nn......................  [progress 200000000 ms=52999]
+  PASS! crc is:9e922f9e
+aluop <b,c,d,e,h,l,m,a>.......  [progress 300000000 ms=79343]
+  [progress 400000000 ms=105770]
+  [progress 500000000 ms=132197]
+  [progress 600000000 ms=158625]
+  [progress 700000000 ms=185052]
+  [progress 800000000 ms=211480]
+  [progress 900000000 ms=237907]
+  [progress 1000000000 ms=264333]
+  [progress 1100000000 ms=290761]
+  [progress 1200000000 ms=317189]
+  [progress 1300000000 ms=343617]
+  [progress 1400000000 ms=370044]
+  [progress 1500000000 ms=396471]
+  [progress 1600000000 ms=422899]
+  [progress 1700000000 ms=449326]
+  [progress 1800000000 ms=475754]
+  [progress 1900000000 ms=502181]
+  [progress 2000000000 ms=528608]
+  [progress 2100000000 ms=555035]
+  [progress 2200000000 ms=581463]
+  [progress 2300000000 ms=607891]
+  [progress 2400000000 ms=634318]
+  [progress 2500000000 ms=660746]
+  [progress 2600000000 ms=687175]
+  PASS! crc is:cf762c86
+<daa,cma,stc,cmc>.............  [progress 2700000000 ms=713388]
+  [progress 2800000000 ms=738659]
+  PASS! crc is:bb3f030c
+<inr,dcr> a...................  PASS! crc is:adb6460e
+<inr,dcr> b...................  PASS! crc is:83ed1345
+<inx,dcx> b...................  PASS! crc is:f79287cd
+<inr,dcr> c...................  PASS! crc is:e5f6721b
+<inr,dcr> d...................  PASS! crc is:15b5579a
+<inx,dcx> d...................  PASS! crc is:7f4e2501
+<inr,dcr> e...................  PASS! crc is:cf2ab396
+<inr,dcr> h...................  PASS! crc is:12b2952c
+<inx,dcx> h...................  PASS! crc is:9f2b23c0
+<inr,dcr> l...................  PASS! crc is:ff57d356
+<inr,dcr> m...................  PASS! crc is:92e963bd
+<inx,dcx> sp..................  PASS! crc is:d5702fab
+lhld nnnn.....................  PASS! crc is:a9c3d5cb
+shld nnnn.....................  PASS! crc is:e8864f26
+lxi <b,d,h,sp>,nnnn...........  PASS! crc is:fcf46e12
+ldax <b,d>....................  PASS! crc is:2b821d5f
+mvi <b,c,d,e,h,l,m,a>,nn......  PASS! crc is:eaa72044
+mov <bcdehla>,<bcdehla>.......  [progress 2900000000 ms=764050]
+  PASS! crc is:10b58cee
+sta nnnn / lda nnnn...........  PASS! crc is:ed57af72
+<rlc,rrc,ral,rar>.............  PASS! crc is:e0d89235
+stax <b,d>....................  PASS! crc is:2b0471e9
+Tests complete
+8080EXM output PASS instructions=2919050698 reference=2919050698 count PASS ms=768914
+verification complete failures=0 PASS

@@ -666,7 +666,7 @@ def port_programs():
     (ROOT / 'src/demo.pico2w').write_text(banner + port((ROOT / 'src/demo.picow').read_text()))
     diag = ROOT / 'Diagnostics'
     (diag / 'verify_body.pico2').write_text(banner + port((diag / 'verify_body.pico').read_text()))
-    for name in ('verify-fast', 'verify-timed', 'verify-pure'):
+    for name in ('verify-fast', 'verify-timed', 'verify-memmap', 'verify-pure', 'verify-timed-memmap', 'verify-pure-full'):
         (diag / f'{name}.pico2w').write_text(banner + port((diag / f'{name}.picow').read_text()))
     print('Pico 2 W programs derived')
 

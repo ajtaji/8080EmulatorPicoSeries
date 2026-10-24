@@ -1,0 +1,22 @@
+=== JOB -Source bench/verify-timed-short.picow -Output bench/verify-timed-short.uf2 -Port COM7 -Seconds 75
+8080 verification clk_sys kHz=200000 timing=1 asm_tail=1 memmap=0
+API/interrupt/flag checks=14875 failures=0 PASS
+*** TST8080
+MICROCOSM ASSOCIATES 8080/8085 CPU DIAGNOSTIC
+ VERSION 1.0  (C) 1980
+ CPU IS OPERATIONAL
+TST8080 output PASS cycles=4924 reference=4924 count PASS ms=0
+*** 8080PRE
+8080 Preliminary tests complete
+8080PRE output PASS cycles=7817 reference=7817 count PASS ms=0
+*** CPUTEST
+<00><00><00><00><00><00>
+DIAGNOSTICS II V1.2 - CPU TEST
+COPYRIGHT (C) 1981 - SUPERSOFT ASSOCIATES
+ABCDEFGHIJKLMNOPQRSTUVWXYZ
+CPU IS 8080/8085
+BEGIN TIMING TEST
+<07><07>END TIMING TEST
+CPU TESTS OK
+CPUTEST output PASS cycles=255653383 reference=255653383 count PASS ms=5718
+verification complete failures=0 PASS

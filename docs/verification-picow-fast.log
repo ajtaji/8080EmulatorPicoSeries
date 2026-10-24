@@ -1,4 +1,3 @@
-=== JOB -Source Diagnostics/verify-fast.picow -Output Diagnostics/verify-fast.uf2 -Port COM7 -Seconds 780
 8080 verification clk_sys kHz=200000 timing=0 asm_tail=1 memmap=0
 API/interrupt/flag checks=8731 failures=0 PASS
 *** TST8080

@@ -2,6 +2,9 @@
 ; 8080 core verification on the board. Included by verify*.picow, which set
 ; #CLOCK_KHZ, #CPU_TIMING, #CPU_ASM_TAIL and #CPU_MEMMAP.
 ;
+;
+; #CPM_EXM = 0 leaves out 8080EXM (2.9 billion instructions, over ten minutes),
+; for a board whose lease is shorter than that.
 ; 1. Directed checks: run budgets, HLT, RST injection, the EI delay, DI, port
 ;    hooks, CpuYield, every PSW value through POP/PUSH PSW and through all
 ;    eight conditions, undocumented opcodes, self-modifying code, the
@@ -122,6 +125,8 @@ Procedure ApiChecks()
   For I = 0 To 65535
     M(I) = 0
   Next
+  ; Programs that end in HLT get a budget of 1000: in a timed build that is
+  ; cycles, and the longest chain below takes 126.
   ; Budgets.
   Start($100)
   Check(Bool(CpuRun(0) = 0), "budget 0", 0, 0)
@@ -153,7 +158,7 @@ Procedure ApiChecks()
   ; EI / HLT, then RST 7 wakes it and pushes the address after HLT.
   M($200) = $FB : M($201) = $76
   Start($200)
-  R = CpuRun(100)
+  R = CpuRun(1000)
   Check(Bool(CpuHalted = 1 And CpuIE = 1), "EI;HLT halts enabled", CpuHalted, 1)
   Check(Bool(CpuInterrupt($FF) = 11), "RST 7 accepted", 0, 11)
   Check(Bool(CpuPC = $38 And CpuHalted = 0 And CpuIE = 0), "RST 7 state", CpuPC, $38)
@@ -168,7 +173,7 @@ Procedure ApiChecks()
   ; EI not at the end of a window: no delay remains.
   M($340) = $FB : M($341) = 0 : M($342) = $76
   Start($340)
-  R = CpuRun(100)
+  R = CpuRun(1000)
   Check(Bool(CpuInterrupt($D7) = 11 And CpuPC = $10), "EI mid-window", CpuPC, $10)
   ; Only RST opcodes are accepted.
   Start($300)
@@ -178,19 +183,19 @@ Procedure ApiChecks()
   ; DI.
   M($310) = $FB : M($311) = 0 : M($312) = $F3 : M($313) = $76
   Start($310)
-  R = CpuRun(100)
+  R = CpuRun(1000)
   Check(Bool(CpuIE = 0 And CpuInterrupt($FF) = 0), "DI disables", CpuIE, 0)
   ; IN / OUT through the hooks.
   M($320) = $DB : M($321) = $42 : M($322) = $D3 : M($323) = $99 : M($324) = $76
   Start($320)
-  R = CpuRun(100)
+  R = CpuRun(1000)
   Check(Bool(CpuA = $18), "IN from hook", CpuA, $18)
   Check(Bool(LastPort = $99 And LastValue = $18), "OUT to hook", LastPort, $99)
   ; CpuYield from a hook ends the window after that instruction.
   YieldPort = $77
   M($330) = $D3 : M($331) = $77 : M($332) = 0 : M($333) = 0
   Start($330)
-  R = CpuRun(100)
+  R = CpuRun(1000)
   CompilerIf #CPU_TIMING = 1
     Check(Bool(R = 10 And CpuPC = $332), "yield after OUT", R, 10)
   CompilerElse
@@ -206,7 +211,7 @@ Procedure ApiChecks()
     Check(Bool(Got = Want), "CpuFlags round trip", Got, Want)
     Start($400)
     CpuSP = $0FFE : M($0FFE) = P : M($0FFF) = $77
-    R = CpuRun(100)
+    R = CpuRun(1000)
     Got = M($0FFE) | (M($0FFF) << 8)
     Check(Bool(Got = (Want | $7700) And CpuA = $77 And CpuSP = $0FFE), "POP/PUSH PSW", Got, Want | $7700)
     ; Each condition under this PSW: Jcc, Ccc, Rcc.
@@ -272,7 +277,7 @@ Procedure ApiChecks()
   M($830) = $FD : M($831) = $40 : M($832) = $08 : M($833) = $D9
   M($840) = $10 : M($841) = $18 : M($842) = $20 : M($843) = $28 : M($844) = $30 : M($845) = $38 : M($846) = $D9
   Start($800)
-  R = CpuRun(100)
+  R = CpuRun(1000)
   Check(Bool(CpuHalted = 1 And CpuPC = $818 And CpuSP = $F000), "undocumented opcodes", CpuPC, $818)
   CompilerIf #CPU_TIMING = 0
     Check(Bool(R = 15), "undocumented instruction count", R, 15)
@@ -280,14 +285,14 @@ Procedure ApiChecks()
   ; Self-modifying code: STA writes INR A over the NOP that follows.
   M($700) = $3E : M($701) = $3C : M($702) = $32 : M($703) = $05 : M($704) = $07 : M($705) = 0 : M($706) = $76
   Start($700)
-  R = CpuRun(100)
+  R = CpuRun(1000)
   Check(Bool(CpuA = $3D And CpuPC = $707), "self-modifying code", CpuA, $3D)
   ; XTHL, XCHG, SHLD/LHLD wrapping at $FFFF, SPHL, PCHL.
   Load($900, ?PairCode, 25)
   M($920) = $76
   M($A00) = $11 : M($A01) = $22
   Start($900)
-  R = CpuRun(100)
+  R = CpuRun(1000)
   Check(Bool(CpuDE = $2211 And M($A00) = $CD And M($A01) = $AB), "XTHL/XCHG", CpuDE, $2211)
   Check(Bool(M($FFFF) = $66 And M(0) = $55), "SHLD wraps", M(0), $55)
   Check(Bool(CpuSP = $5566 And CpuHL = $0920 And CpuPC = $921), "LHLD wraps, SPHL, PCHL", CpuSP, $5566)
@@ -303,7 +308,7 @@ Procedure ApiChecks()
     M($B0D) = $76
     TrapReads = 0 : TrapWrites = 0
     Start($B00)
-    R = CpuRun(100)
+    R = CpuRun(1000)
     Check(Bool(CpuA = $AB And M($8110) = $AB), "ROM page read direct, write refused", CpuA, $AB)
     Check(Bool(TrapReads = 2 And TrapWrites = 2), "trap counts", (TrapReads << 8) | TrapWrites, $202)
     Check(Bool(LastTrapAdr = $8000 And LastTrapVal = $3D), "INR M through traps", LastTrapVal, $3D)
@@ -446,12 +451,16 @@ Procedure Main()
     *TestName = "TST8080" : *TestImage = ?Tst8080 : TestSize = #TST8080_SIZE : *TestPass = "CPU IS OPERATIONAL" : RefHi = 0 : RefLo = 4924 : RunCpm()
     *TestName = "8080PRE" : *TestImage = ?Pre8080 : TestSize = #PRE8080_SIZE : *TestPass = "8080 Preliminary tests complete" : RefHi = 0 : RefLo = 7817 : RunCpm()
     *TestName = "CPUTEST" : *TestImage = ?Cputest : TestSize = #CPUTEST_SIZE : *TestPass = "CPU TESTS OK" : RefHi = 0 : RefLo = 255653383 : RunCpm()
-    *TestName = "8080EXM" : *TestImage = ?Exm8080 : TestSize = #EXM8080_SIZE : *TestPass = "Tests complete" : RefHi = 23 : RefLo = 803381171 : RunCpm()
+    CompilerIf #CPM_EXM = 1
+      *TestName = "8080EXM" : *TestImage = ?Exm8080 : TestSize = #EXM8080_SIZE : *TestPass = "Tests complete" : RefHi = 23 : RefLo = 803381171 : RunCpm()
+    CompilerEndIf
   CompilerElse
     *TestName = "TST8080" : *TestImage = ?Tst8080 : TestSize = #TST8080_SIZE : *TestPass = "CPU IS OPERATIONAL" : RefHi = 0 : RefLo = 651 : RunCpm()
     *TestName = "8080PRE" : *TestImage = ?Pre8080 : TestSize = #PRE8080_SIZE : *TestPass = "8080 Preliminary tests complete" : RefHi = 0 : RefLo = 1061 : RunCpm()
     *TestName = "CPUTEST" : *TestImage = ?Cputest : TestSize = #CPUTEST_SIZE : *TestPass = "CPU TESTS OK" : RefHi = 0 : RefLo = 33971311 : RunCpm()
-    *TestName = "8080EXM" : *TestImage = ?Exm8080 : TestSize = #EXM8080_SIZE : *TestPass = "Tests complete" : RefHi = 2 : RefLo = 919050698 : RunCpm()
+    CompilerIf #CPM_EXM = 1
+      *TestName = "8080EXM" : *TestImage = ?Exm8080 : TestSize = #EXM8080_SIZE : *TestPass = "Tests complete" : RefHi = 2 : RefLo = 919050698 : RunCpm()
+    CompilerEndIf
   CompilerEndIf
   Say("verification complete failures=") : Num(TotalFailures)
   If TotalFailures = 0
