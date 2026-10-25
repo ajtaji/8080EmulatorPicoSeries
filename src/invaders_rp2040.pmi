@@ -31,7 +31,8 @@ CompilerEndIf
 XIncludeFile "i8080.pico"
 XIncludeFile "io.pico"
 XIncludeFile "invaders.pmi"
-XIncludeFile "inv_video.pico"
+#VID_TREQ_SHIFT = 15
+XIncludeFile "inv_video.pmi"
 CompilerIf #INV_AUDIO = 1
   XIncludeFile "inv_audio.pmi"
 CompilerElse
@@ -42,4 +43,7 @@ CompilerIf #INV_TEST = 1
 CompilerElse
   XIncludeFile "inv_rom_demo.pmi"
 CompilerEndIf
+Procedure.i AppLaunchCore1()
+  ProcedureReturn multicore_launch()
+EndProcedure
 XIncludeFile "inv_app.pmi"

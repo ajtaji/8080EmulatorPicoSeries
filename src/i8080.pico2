@@ -172,8 +172,7 @@ Macro DispatchNext()
       ldrb r2, [r1, r4]
       adds r4, #1
       uxth r4, r4
-      ldr r1, [r6, r2, lsl #2]
-      bx r1
+      ldr pc, [r6, r2, lsl #2]
     EndASM
   CompilerElse
     Tmp = M(CpuPC)

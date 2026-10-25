@@ -15,6 +15,7 @@ Global Dim InvKeyBuf.a(256)
 Global InvBtPeerSet.i, AudioRunning.i, AudioLive.i, AudioUnderruns.i, AudioPackets.i
 Global AudioLastPoll.i, AudioGap.i = 700, AudioLastRead.i
 Global Core1ParkRequest.i, Core1Parked.i
+Global AudioDid.i              ; 1 when an AudioPoll drove the radio
 
 ; Six bytes in HCI order (least significant first), as the NES's wrapper keeps them.
 Procedure InvBluetoothSetPeer(src.i)
@@ -78,6 +79,7 @@ ProcedureRAM AudioPoll()
   start = Micros()
   If start - AudioLastPoll < AudioGap : ProcedureReturn : EndIf
   AudioLastPoll = start
+  AudioDid = 1
   BtAudioPoll()
   If BtAudioBusy() : AudioGap = 150 : Else : AudioGap = 700 : EndIf
   If start - AudioLastRead > 100000

@@ -1,0 +1,242 @@
+﻿=== JOB -Source src/invaders.picow -Output firmware/invaders-picow.uf2 -Port COM7 -Seconds 30
+pmfc: C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\src\invaders.picow  ->  RP2040
+> Intrinsics for RP2040: rp2040_hardware.def
+[DEBUG] Attempting to load intrinsics from: C:\Users\ajtaj\Desktop\Github\PureBasicCode\OpenGl Work\ArduinoBasic\RP2040\Intrinsics\rp2040_hardware.def
+> Loaded 6993 register names from rp2040_registers.def
+> Loaded Hardware Intrinsics from rp2040_hardware.def
+pmfc: pin aliases from Boards/Raspberry_Pi_Pico_W.board
+> ReserveRegister: 6 reservation(s) on RP2040
+> RESERVE CpuPC -> r4 (.i, 4 bytes, reg 4, span 1) at i8080.pico line 32 (included)
+> RESERVE CpuA -> r9 (.i, 4 bytes, reg 9, span 1) at i8080.pico line 32 (included)
+> RESERVE Res -> r10 (.i, 4 bytes, reg 10, span 1) at i8080.pico line 32 (included)
+> RESERVE Left -> r5 (.i, 4 bytes, reg 5, span 1) at i8080.pico line 32 (included)
+> RESERVE CpuHL -> r8 (.i, 4 bytes, reg 8, span 1) at i8080.pico line 32 (included)
+> RESERVE FR -> r11 (.i, 4 bytes, reg 11, span 1) at i8080.pico line 32 (included)
+> F_CPU = 200000000 Hz, from the board's ClockSpeed - delay_ms and the baud divisors follow it.
+> ReserveRegister proof (RP2040): 26249 lines, 150 routines; core 0 reaches 17925 instructions, core 1 1350, interrupt handlers 36 - r12 and r4-r7 hold
+pmfc: 26249 lines of assembly
+pmfc: wrote C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\firmware\invaders-picow.uf2.asm
+> RP2040 ASSEMBLER: Starting Pass 1 (Resolving Labels)...
+> RP2040 ASSEMBLER: 23212 bytes of code run from SRAM at $20000000-$20005AAB, copied from flash at boot; 151020 bytes of SRAM left free, stacks and reserved windows excluded.
+> RP2040 ASSEMBLER: branch relaxation converged in 3 rounds.
+> RP2040 ASSEMBLER: Starting Pass 2 (Generating Machine Code)...
+> RP2040 ASSEMBLER: Wrote cycle-timing listing to C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\firmware\invaders-picow.cycles.txt
+> RP2040 ASSEMBLER: Writing raw binary to C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\firmware\invaders-picow.uf2
+[TELEMETRY_START]
+ROM_TOTAL_RP2040|56368|2097152
+CYCLES_TOTAL_RP2040|29867|straight-line, not-taken branches
+REGMAP_RP2040|4043|141|53|352|materialisations seen|already in dest|already in another reg|nearby constant
+SLOTMAP_RP2040|135|frame-slot loads taken from a register
+[TELEMETRY_END]
+pmfc: invaders-picow.uf2 is named .uf2, so the image is written as a UF2, exactly as an upload packs it: Packed 56368 bytes into 221 blocks -> C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\firmware\invaders-picow.uf2
+pmfc: wrote C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\firmware\invaders-picow.uf2
+pmfc: OK
+pmfc: C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\src\invaders.picow  ->  RP2040
+> Intrinsics for RP2040: rp2040_hardware.def
+[DEBUG] Attempting to load intrinsics from: C:\Users\ajtaj\Desktop\Github\PureBasicCode\OpenGl Work\ArduinoBasic\RP2040\Intrinsics\rp2040_hardware.def
+> Loaded 6993 register names from rp2040_registers.def
+> Loaded Hardware Intrinsics from rp2040_hardware.def
+pmfc: pin aliases from Boards/Raspberry_Pi_Pico_W.board
+> ReserveRegister: 6 reservation(s) on RP2040
+> RESERVE CpuPC -> r4 (.i, 4 bytes, reg 4, span 1) at i8080.pico line 32 (included)
+> RESERVE CpuA -> r9 (.i, 4 bytes, reg 9, span 1) at i8080.pico line 32 (included)
+> RESERVE Res -> r10 (.i, 4 bytes, reg 10, span 1) at i8080.pico line 32 (included)
+> RESERVE Left -> r5 (.i, 4 bytes, reg 5, span 1) at i8080.pico line 32 (included)
+> RESERVE CpuHL -> r8 (.i, 4 bytes, reg 8, span 1) at i8080.pico line 32 (included)
+> RESERVE FR -> r11 (.i, 4 bytes, reg 11, span 1) at i8080.pico line 32 (included)
+> F_CPU = 200000000 Hz, from the board's ClockSpeed - delay_ms and the baud divisors follow it.
+> ReserveRegister proof (RP2040): 26249 lines, 150 routines; core 0 reaches 17925 instructions, core 1 1350, interrupt handlers 36 - r12 and r4-r7 hold
+pmfc: 26249 lines of assembly
+pmfc: wrote C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\firmware\invaders-picow.uf2.asm
+> RP2040 ASSEMBLER: Starting Pass 1 (Resolving Labels)...
+> RP2040 ASSEMBLER: 23212 bytes of code run from SRAM at $20000000-$20005AAB, copied from flash at boot; 151020 bytes of SRAM left free, stacks and reserved windows excluded.
+> RP2040 ASSEMBLER: branch relaxation converged in 3 rounds.
+> RP2040 ASSEMBLER: Starting Pass 2 (Generating Machine Code)...
+> RP2040 ASSEMBLER: Wrote cycle-timing listing to C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\firmware\invaders-picow.cycles.txt
+> RP2040 ASSEMBLER: Writing raw binary to C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\firmware\invaders-picow.uf2
+[TELEMETRY_START]
+ROM_TOTAL_RP2040|56368|2097152
+CYCLES_TOTAL_RP2040|29867|straight-line, not-taken branches
+REGMAP_RP2040|4043|141|53|352|materialisations seen|already in dest|already in another reg|nearby constant
+SLOTMAP_RP2040|135|frame-slot loads taken from a register
+[TELEMETRY_END]
+pmfc: invaders-picow.uf2 is named .uf2, so the image is written as a UF2, exactly as an upload packs it: Packed 56368 bytes into 221 blocks -> C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\firmware\invaders-picow.uf2
+pmfc: wrote C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\firmware\invaders-picow.uf2
+pmfc: uploading invaders-picow.uf2 (RP2040) through COM7
+> [UF2] invaders-picow.uf2 is a ready UF2: 221 blocks for the RP2040 (Pico / Pico W), family ID 0xE48BFF56, writing 0x10000000 to 0x1000DCFF. It is sent exactly as it is: it is not packed again, and the file is not changed.
+> [NATIVE UPLOADER] Sending BOOTSEL reset command to COM7 (the 1200-baud touch)...
+> [NATIVE UPLOADER] COM7 left the bus after the 1200-baud touch (0.0 s): the board is going to its boot loader.
+> [NATIVE UPLOADER] Waiting for matching BOOTSEL drive: RPI-RP2 (RP2040)...
+> [NATIVE UPLOADER] Found BOOTSEL drive at J:\
+> [NATIVE UPLOADER] Writing image: 65536 of 113152 bytes (57%)
+> [NATIVE UPLOADER] Writing image: 113152 of 113152 bytes (100%)
+> [NATIVE UPLOADER] Wrote invaders-picow.uf2 to J:\
+> [NATIVE UPLOADER] FLASH COMPLETE! Board will reboot into the new firmware automatically.
+> [NATIVE UPLOADER] Serial monitor: board found on COM7 (USB vendor ID 2E8A), on the same USB connection it was flashed through.
+pmfc: reading COM7 at 9600 baud for 30 s (the port opened 1 ms after the upload, attempt 1).
+INVADERS PureMetal 8080 clk_khz=200000
+INVADERS core1 launch=1
+INVADERS audio: none in this build
+INVADERS spi_hz=100000000 rom_bytes=8192
+INVADERS_STATUS frames=60 emu_us=150407 worst_us=2666 lines_out=15360 lcd_frames=60 vid_dropped=0 samples=48000 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=60 core0_busy_pct=16 core1_busy_pct=74
+INVADERS_TEST PASS frames=120 RST1=110 RST2=109 shift=52,109,254,192 sprite=40 tone0_period=126
+INVADERS_STATUS frames=61 emu_us=161725 worst_us=2654 lines_out=15616 lcd_frames=61 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=121 core0_busy_pct=17 core1_busy_pct=74
+INVADERS_STATUS frames=61 emu_us=161722 worst_us=2652 lines_out=15616 lcd_frames=61 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=182 core0_busy_pct=17 core1_busy_pct=74
+INVADERS_STATUS frames=61 emu_us=161724 worst_us=2652 lines_out=15616 lcd_frames=61 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=243 core0_busy_pct=17 core1_busy_pct=74
+INVADERS_STATUS frames=61 emu_us=161723 worst_us=2652 lines_out=15616 lcd_frames=61 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=304 core0_busy_pct=17 core1_busy_pct=74
+INVADERS_STATUS frames=61 emu_us=161729 worst_us=2652 lines_out=15616 lcd_frames=61 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=365 core0_busy_pct=17 core1_busy_pct=74
+INVADERS_STATUS frames=61 emu_us=161725 worst_us=2652 lines_out=15616 lcd_frames=61 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=426 core0_busy_pct=17 core1_busy_pct=74
+INVADERS_STATUS frames=61 emu_us=161726 worst_us=2652 lines_out=15616 lcd_frames=61 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=487 core0_busy_pct=17 core1_busy_pct=74
+INVADERS_STATUS frames=61 emu_us=161722 worst_us=2652 lines_out=15616 lcd_frames=61 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=548 core0_busy_pct=17 core1_busy_pct=74
+INVADERS_STATUS frames=61 emu_us=161724 worst_us=2652 lines_out=15616 lcd_frames=61 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=609 core0_busy_pct=17 core1_busy_pct=74
+INVADERS_STATUS frames=61 emu_us=161730 worst_us=2653 lines_out=15616 lcd_frames=61 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=670 core0_busy_pct=17 core1_busy_pct=74
+INVADERS_STATUS frames=61 emu_us=161728 worst_us=2652 lines_out=15616 lcd_frames=61 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=731 core0_busy_pct=17 core1_busy_pct=74
+INVADERS_STATUS frames=61 emu_us=161723 worst_us=2653 lines_out=15616 lcd_frames=61 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=792 core0_busy_pct=17 core1_busy_pct=74
+INVADERS_STATUS frames=61 emu_us=161730 worst_us=2653 lines_out=15616 lcd_frames=61 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=853 core0_busy_pct=17 core1_busy_pct=74
+INVADERS_STATUS frames=61 emu_us=161721 worst_us=2652 lines_out=15616 lcd_frames=61 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=914 core0_busy_pct=17 core1_busy_pct=74
+INVADERS_STATUS frames=61 emu_us=161729 worst_us=2653 lines_out=15616 lcd_frames=61 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=975 core0_busy_pct=17 core1_busy_pct=74
+INVADERS_STATUS frames=61 emu_us=161729 worst_us=2652 lines_out=15616 lcd_frames=61 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=1036 core0_busy_pct=17 core1_busy_pct=74
+INVADERS_STATUS frames=61 emu_us=161725 worst_us=2652 lines_out=15616 lcd_frames=61 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=1097 core0_busy_pct=17 core1_busy_pct=74
+INVADERS_STATUS frames=61 emu_us=161727 worst_us=2652 lines_out=15616 lcd_frames=61 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=1158 core0_busy_pct=17 core1_busy_pct=74
+INVADERS_VRAM frame=1200 sum=264782938
+INVADERS_STATUS frames=61 emu_us=161723 worst_us=2652 lines_out=15616 lcd_frames=61 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=1219 core0_busy_pct=17 core1_busy_pct=74
+INVADERS_STATUS frames=61 emu_us=161731 worst_us=2653 lines_out=15616 lcd_frames=61 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=1280 core0_busy_pct=17 core1_busy_pct=74
+INVADERS_STATUS frames=61 emu_us=161723 worst_us=2652 lines_out=15616 lcd_frames=61 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=1341 core0_busy_pct=17 core1_busy_pct=74
+INVADERS_STATUS frames=61 emu_us=161726 worst_us=2652 lines_out=15616 lcd_frames=61 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=1402 core0_busy_pct=17 core1_busy_pct=74
+INVADERS_STATUS frames=61 emu_us=161723 worst_us=2652 lines_out=15616 lcd_frames=61 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=1463 core0_busy_pct=17 core1_busy_pct=74
+INVADERS_STATUS frames=61 emu_us=161722 worst_us=2652 lines_out=15616 lcd_frames=61 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=1524 core0_busy_pct=17 core1_busy_pct=74
+INVADERS_STATUS frames=61 emu_us=161721 worst_us=2652 lines_out=15616 lcd_frames=61 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=1585 core0_busy_pct=17 core1_busy_pct=74
+INVADERS_STATUS frames=61 emu_us=161722 worst_us=2652 lines_out=15616 lcd_frames=61 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=1646 core0_busy_pct=17 core1_busy_pct=74
+INVADERS_STATUS frames=61 emu_us=161725 worst_us=2652 lines_out=15616 lcd_frames=61 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=1707 core0_busy_pct=17 core1_busy_pct=74
+
+pmfc: read COM7 for 30 s: 6311 bytes.
+pmfc: OK
+
+Algorithm Hash                                                             Path                                        
+--------- ----                                                             ----                                        
+SHA256    EE03FB06C0C3CEFE9CE79C2E7405AB3CE0C5BDE69F893F7258E897C64BA5D6F0 C:\Users\ajtaj\Desktop\Github\PureBasicCo...
+SHA256    F6D0E23082EF8B1F8D443E6F4D5D32B50C693D08BA55D7228729FC2AF9083C60 C:\Users\ajtaj\Desktop\Github\8080Emulato...
+SHA256    6627518F17D3C4795D1B121AFA803819DF0416915B9C52E3A0C5AA90505C5D43 C:\Users\ajtaj\Desktop\Github\8080Emulato...
+
+
+=== JOB -Source src/invaders_demo.picow -Output firmware/invaders-demo-picow.uf2 -Port COM7 -Seconds 30
+pmfc: C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\src\invaders_demo.picow  ->  RP2040
+> Intrinsics for RP2040: rp2040_hardware.def
+[DEBUG] Attempting to load intrinsics from: C:\Users\ajtaj\Desktop\Github\PureBasicCode\OpenGl Work\ArduinoBasic\RP2040\Intrinsics\rp2040_hardware.def
+> Loaded 6993 register names from rp2040_registers.def
+> Loaded Hardware Intrinsics from rp2040_hardware.def
+pmfc: pin aliases from Boards/Raspberry_Pi_Pico_W.board
+> ReserveRegister: 6 reservation(s) on RP2040
+> RESERVE CpuPC -> r4 (.i, 4 bytes, reg 4, span 1) at i8080.pico line 32 (included)
+> RESERVE CpuA -> r9 (.i, 4 bytes, reg 9, span 1) at i8080.pico line 32 (included)
+> RESERVE Res -> r10 (.i, 4 bytes, reg 10, span 1) at i8080.pico line 32 (included)
+> RESERVE Left -> r5 (.i, 4 bytes, reg 5, span 1) at i8080.pico line 32 (included)
+> RESERVE CpuHL -> r8 (.i, 4 bytes, reg 8, span 1) at i8080.pico line 32 (included)
+> RESERVE FR -> r11 (.i, 4 bytes, reg 11, span 1) at i8080.pico line 32 (included)
+> F_CPU = 200000000 Hz, from the board's ClockSpeed - delay_ms and the baud divisors follow it.
+> ReserveRegister proof (RP2040): 25789 lines, 149 routines; core 0 reaches 17601 instructions, core 1 1350, interrupt handlers 36 - r12 and r4-r7 hold
+pmfc: 25789 lines of assembly
+pmfc: wrote C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\firmware\invaders-demo-picow.uf2.asm
+> RP2040 ASSEMBLER: Starting Pass 1 (Resolving Labels)...
+> RP2040 ASSEMBLER: 23212 bytes of code run from SRAM at $20000000-$20005AAB, copied from flash at boot; 151048 bytes of SRAM left free, stacks and reserved windows excluded.
+> RP2040 ASSEMBLER: branch relaxation converged in 3 rounds.
+> RP2040 ASSEMBLER: Starting Pass 2 (Generating Machine Code)...
+> RP2040 ASSEMBLER: Wrote cycle-timing listing to C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\firmware\invaders-demo-picow.cycles.txt
+> RP2040 ASSEMBLER: Writing raw binary to C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\firmware\invaders-demo-picow.uf2
+[TELEMETRY_START]
+ROM_TOTAL_RP2040|55244|2097152
+CYCLES_TOTAL_RP2040|29266|straight-line, not-taken branches
+REGMAP_RP2040|3944|141|52|351|materialisations seen|already in dest|already in another reg|nearby constant
+SLOTMAP_RP2040|135|frame-slot loads taken from a register
+[TELEMETRY_END]
+pmfc: invaders-demo-picow.uf2 is named .uf2, so the image is written as a UF2, exactly as an upload packs it: Packed 55244 bytes into 216 blocks -> C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\firmware\invaders-demo-picow.uf2
+pmfc: wrote C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\firmware\invaders-demo-picow.uf2
+pmfc: OK
+pmfc: C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\src\invaders_demo.picow  ->  RP2040
+> Intrinsics for RP2040: rp2040_hardware.def
+[DEBUG] Attempting to load intrinsics from: C:\Users\ajtaj\Desktop\Github\PureBasicCode\OpenGl Work\ArduinoBasic\RP2040\Intrinsics\rp2040_hardware.def
+> Loaded 6993 register names from rp2040_registers.def
+> Loaded Hardware Intrinsics from rp2040_hardware.def
+pmfc: pin aliases from Boards/Raspberry_Pi_Pico_W.board
+> ReserveRegister: 6 reservation(s) on RP2040
+> RESERVE CpuPC -> r4 (.i, 4 bytes, reg 4, span 1) at i8080.pico line 32 (included)
+> RESERVE CpuA -> r9 (.i, 4 bytes, reg 9, span 1) at i8080.pico line 32 (included)
+> RESERVE Res -> r10 (.i, 4 bytes, reg 10, span 1) at i8080.pico line 32 (included)
+> RESERVE Left -> r5 (.i, 4 bytes, reg 5, span 1) at i8080.pico line 32 (included)
+> RESERVE CpuHL -> r8 (.i, 4 bytes, reg 8, span 1) at i8080.pico line 32 (included)
+> RESERVE FR -> r11 (.i, 4 bytes, reg 11, span 1) at i8080.pico line 32 (included)
+> F_CPU = 200000000 Hz, from the board's ClockSpeed - delay_ms and the baud divisors follow it.
+> ReserveRegister proof (RP2040): 25789 lines, 149 routines; core 0 reaches 17601 instructions, core 1 1350, interrupt handlers 36 - r12 and r4-r7 hold
+pmfc: 25789 lines of assembly
+pmfc: wrote C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\firmware\invaders-demo-picow.uf2.asm
+> RP2040 ASSEMBLER: Starting Pass 1 (Resolving Labels)...
+> RP2040 ASSEMBLER: 23212 bytes of code run from SRAM at $20000000-$20005AAB, copied from flash at boot; 151048 bytes of SRAM left free, stacks and reserved windows excluded.
+> RP2040 ASSEMBLER: branch relaxation converged in 3 rounds.
+> RP2040 ASSEMBLER: Starting Pass 2 (Generating Machine Code)...
+> RP2040 ASSEMBLER: Wrote cycle-timing listing to C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\firmware\invaders-demo-picow.cycles.txt
+> RP2040 ASSEMBLER: Writing raw binary to C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\firmware\invaders-demo-picow.uf2
+[TELEMETRY_START]
+ROM_TOTAL_RP2040|55244|2097152
+CYCLES_TOTAL_RP2040|29266|straight-line, not-taken branches
+REGMAP_RP2040|3944|141|52|351|materialisations seen|already in dest|already in another reg|nearby constant
+SLOTMAP_RP2040|135|frame-slot loads taken from a register
+[TELEMETRY_END]
+pmfc: invaders-demo-picow.uf2 is named .uf2, so the image is written as a UF2, exactly as an upload packs it: Packed 55244 bytes into 216 blocks -> C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\firmware\invaders-demo-picow.uf2
+pmfc: wrote C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\firmware\invaders-demo-picow.uf2
+pmfc: uploading invaders-demo-picow.uf2 (RP2040) through COM7
+> [UF2] invaders-demo-picow.uf2 is a ready UF2: 216 blocks for the RP2040 (Pico / Pico W), family ID 0xE48BFF56, writing 0x10000000 to 0x1000D7FF. It is sent exactly as it is: it is not packed again, and the file is not changed.
+> [NATIVE UPLOADER] Sending BOOTSEL reset command to COM7 (the 1200-baud touch)...
+> [NATIVE UPLOADER] COM7 is still there 2.0 s after the 1200-baud touch (a program built before the touch existed does not answer it); sending the reset phrase.
+> [WARN] Could not open COM7 to send the reset command (the board may already be rebooting). Press BOOTSEL + reset manually if the drive does not appear.
+> [NATIVE UPLOADER] Waiting for matching BOOTSEL drive: RPI-RP2 (RP2040)...
+> [NATIVE UPLOADER] Found BOOTSEL drive at J:\
+> [NATIVE UPLOADER] Writing image: 65536 of 110592 bytes (59%)
+> [NATIVE UPLOADER] Writing image: 110592 of 110592 bytes (100%)
+> [NATIVE UPLOADER] Wrote invaders-demo-picow.uf2 to J:\
+> [NATIVE UPLOADER] FLASH COMPLETE! Board will reboot into the new firmware automatically.
+> [NATIVE UPLOADER] Serial monitor: board found on COM7 (USB vendor ID 2E8A), on the same USB connection it was flashed through.
+pmfc: reading COM7 at 9600 baud for 30 s (the port opened 3 ms after the upload, attempt 1).
+INVADERS PureMetal 8080 clk_khz=200000
+INVADERS core1 launch=1
+INVADERS audio: none in this build
+INVADERS spi_hz=100000000 rom_bytes=8192
+INVADERS_STATUS frames=60 emu_us=214532 worst_us=4046 lines_out=15360 lcd_frames=60 vid_dropped=0 samples=48000 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=60 core0_busy_pct=23 core1_busy_pct=73
+INVADERS_STATUS frames=61 emu_us=223056 worst_us=4049 lines_out=15616 lcd_frames=60 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=121 core0_busy_pct=23 core1_busy_pct=74
+INVADERS_STATUS frames=61 emu_us=223939 worst_us=4048 lines_out=15616 lcd_frames=61 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=182 core0_busy_pct=23 core1_busy_pct=74
+INVADERS_STATUS frames=61 emu_us=223981 worst_us=4039 lines_out=15616 lcd_frames=61 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=243 core0_busy_pct=23 core1_busy_pct=74
+INVADERS_STATUS frames=61 emu_us=223286 worst_us=4036 lines_out=15616 lcd_frames=61 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=304 core0_busy_pct=23 core1_busy_pct=75
+INVADERS_STATUS frames=61 emu_us=224853 worst_us=4049 lines_out=15616 lcd_frames=61 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=365 core0_busy_pct=23 core1_busy_pct=75
+INVADERS_STATUS frames=61 emu_us=228646 worst_us=4049 lines_out=15608 lcd_frames=60 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=426 core0_busy_pct=24 core1_busy_pct=76
+INVADERS_STATUS frames=61 emu_us=228225 worst_us=4044 lines_out=15616 lcd_frames=62 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=487 core0_busy_pct=24 core1_busy_pct=76
+INVADERS_STATUS frames=61 emu_us=228879 worst_us=4051 lines_out=15612 lcd_frames=60 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=548 core0_busy_pct=24 core1_busy_pct=76
+INVADERS_STATUS frames=61 emu_us=228365 worst_us=4050 lines_out=15612 lcd_frames=60 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=609 core0_busy_pct=24 core1_busy_pct=76
+INVADERS_STATUS frames=61 emu_us=228928 worst_us=4050 lines_out=15616 lcd_frames=60 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=670 core0_busy_pct=24 core1_busy_pct=76
+INVADERS_STATUS frames=61 emu_us=229104 worst_us=4052 lines_out=15616 lcd_frames=60 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=731 core0_busy_pct=24 core1_busy_pct=76
+INVADERS_STATUS frames=61 emu_us=229120 worst_us=4049 lines_out=15616 lcd_frames=60 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=792 core0_busy_pct=24 core1_busy_pct=76
+INVADERS_STATUS frames=61 emu_us=229089 worst_us=4050 lines_out=15612 lcd_frames=60 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=853 core0_busy_pct=24 core1_busy_pct=76
+INVADERS_STATUS frames=61 emu_us=228387 worst_us=4050 lines_out=15612 lcd_frames=60 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=914 core0_busy_pct=24 core1_busy_pct=76
+INVADERS_STATUS frames=61 emu_us=228641 worst_us=4050 lines_out=15616 lcd_frames=61 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=975 core0_busy_pct=24 core1_busy_pct=76
+INVADERS_STATUS frames=61 emu_us=229162 worst_us=4052 lines_out=15608 lcd_frames=60 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=1036 core0_busy_pct=24 core1_busy_pct=76
+INVADERS_STATUS frames=61 emu_us=227795 worst_us=4050 lines_out=15608 lcd_frames=61 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=1097 core0_busy_pct=24 core1_busy_pct=76
+INVADERS_STATUS frames=61 emu_us=228710 worst_us=4050 lines_out=15616 lcd_frames=61 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=1158 core0_busy_pct=24 core1_busy_pct=76
+INVADERS_VRAM frame=1200 sum=-2054358275
+INVADERS_STATUS frames=61 emu_us=228615 worst_us=4051 lines_out=15612 lcd_frames=60 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=1219 core0_busy_pct=24 core1_busy_pct=76
+INVADERS_STATUS frames=61 emu_us=228412 worst_us=4048 lines_out=15616 lcd_frames=61 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=1280 core0_busy_pct=24 core1_busy_pct=76
+INVADERS_STATUS frames=61 emu_us=229161 worst_us=4049 lines_out=15616 lcd_frames=60 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=1341 core0_busy_pct=24 core1_busy_pct=76
+INVADERS_STATUS frames=61 emu_us=228237 worst_us=4051 lines_out=15608 lcd_frames=60 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=1402 core0_busy_pct=24 core1_busy_pct=76
+INVADERS_STATUS frames=61 emu_us=228248 worst_us=4049 lines_out=15620 lcd_frames=62 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=1463 core0_busy_pct=24 core1_busy_pct=76
+INVADERS_STATUS frames=61 emu_us=228860 worst_us=4051 lines_out=15612 lcd_frames=60 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=1524 core0_busy_pct=24 core1_busy_pct=76
+INVADERS_STATUS frames=61 emu_us=228381 worst_us=4050 lines_out=15612 lcd_frames=60 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=1585 core0_busy_pct=24 core1_busy_pct=76
+INVADERS_STATUS frames=61 emu_us=228914 worst_us=4051 lines_out=15616 lcd_frames=61 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=1646 core0_busy_pct=24 core1_busy_pct=76
+INVADERS_STATUS frames=61 emu_us=229114 worst_us=4051 lines_out=15608 lcd_frames=60 vid_dropped=0 samples=48800 in1=0 bt_live=0 bt_under=0 bt_packets=0 late=0 machine_frames=1707 core0_busy_pct=24 core1_busy_pct=76
+
+pmfc: read COM7 for 30 s: 6216 bytes.
+pmfc: OK
+
+Algorithm Hash                                                             Path                                        
+--------- ----                                                             ----                                        
+SHA256    EE03FB06C0C3CEFE9CE79C2E7405AB3CE0C5BDE69F893F7258E897C64BA5D6F0 C:\Users\ajtaj\Desktop\Github\PureBasicCo...
+SHA256    15335273E969360D36DB7EC7C8F1D14539D2E6237B21E82F4222E68FAA5A4479 C:\Users\ajtaj\Desktop\Github\8080Emulato...
+SHA256    7C3F0CAD3312472859AB3CBF10BF3A91D3A4C6D7B670541AB2B59BE28F5202CB C:\Users\ajtaj\Desktop\Github\8080Emulato...
+
+

@@ -1,0 +1,42 @@
+﻿; Everything the Space Invaders machine needs on the Pico 2 W (RP2350), on the
+; same LAFVIN ST7796 kit as the Pico W. The program that includes this sets
+; #INV_TEST (1: the built-in ROM is the machine test ROM, checked on the
+; board; 0: the PureMetal demo, demo/demo.invaders), then calls InvMain().
+; No radio here: the machine fills its sound ring and nothing plays it.
+; Core 1 is the second Cortex-M33 running this same image (multicore_smp).
+#CLOCK_KHZ = 150000
+#CPU_TIMING = 1
+#CPU_ASM_TAIL = 1
+#CPU_MEMMAP = 1
+#INV_AUDIO = 0
+EnableExplicit
+XIncludeFile "RP2350/Lib/clocks.pico2"
+XIncludeFile "RP2350/Lib/timer.pico2"
+XIncludeFile "RP2350/Lib/uart.pico2"
+XIncludeFile "RP2350/Lib/usb_serial.pico2"
+XIncludeFile "RP2350/Lib/safety.pico2"
+XIncludeFile "RP2350/Lib/bits.pico2"
+XIncludeFile "RP2350/Lib/wiring.pico2"
+XIncludeFile "RP2350/Lib/spi.pico2"
+XIncludeFile "RP2350/Lib/st7796.pico2"
+XIncludeFile "RP2350/Lib/multicore_smp.pico2"
+XIncludeFile "i8080_lib.pico2"         ; the layout that leaves library code its spill pool
+XIncludeFile "io.pico2"
+XIncludeFile "invaders.pmi"
+#VID_TREQ_SHIFT = #SPI_DMA_TREQ_SHIFT
+XIncludeFile "inv_video.pmi"
+XIncludeFile "inv_audio_null.pmi"
+CompilerIf #INV_TEST = 1
+  XIncludeFile "inv_rom_test.pmi"
+CompilerElse
+  XIncludeFile "inv_rom_demo.pmi"
+CompilerEndIf
+; 1 when core 1 answered the bootrom's launch handshake (all six words).
+Procedure.i AppLaunchCore1()
+  McCore1ReleaseHold()
+  If McLaunchCore1() = 6
+    ProcedureReturn 1
+  EndIf
+  ProcedureReturn 0
+EndProcedure
+XIncludeFile "inv_app.pmi"

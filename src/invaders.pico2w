@@ -1,0 +1,6 @@
+; The Space Invaders machine on the Pico 2 W with the LAFVIN ST7796 panel,
+; running the machine test ROM: after 120 frames the board checks the RAM it
+; left and prints INVADERS_TEST PASS or FAIL.
+#INV_TEST = 1
+XIncludeFile "invaders_rp2350.pmi"
+InvMain()

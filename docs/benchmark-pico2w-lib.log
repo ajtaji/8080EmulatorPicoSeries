@@ -1,0 +1,38 @@
+8080 PureMetal Pico 2 W clk_sys kHz=150000
+sum test A=55 instructions=33 PASS
+register/branch DCR/JNZ instructions=1000000 us=173233 instructions/s=5772572
+arithmetic ADI/XRI/RLC/RAR/ADD/DAA instructions=1000000 us=225715 instructions/s=4430365
+memory copy MOV/STAX/INX/DCR/JNZ instructions=1000000 us=141424 instructions/s=7070935
+call/stack CALL/PUSH/POP/RET instructions=1000000 us=200000 instructions/s=5000000
+register/branch DCR/JNZ instructions=1000000 us=173230 instructions/s=5772672
+arithmetic ADI/XRI/RLC/RAR/ADD/DAA instructions=1000000 us=225715 instructions/s=4430365
+memory copy MOV/STAX/INX/DCR/JNZ instructions=1000000 us=141424 instructions/s=7070935
+call/stack CALL/PUSH/POP/RET instructions=1000000 us=200000 instructions/s=5000000
+register/branch DCR/JNZ instructions=1000000 us=173229 instructions/s=5772705
+arithmetic ADI/XRI/RLC/RAR/ADD/DAA instructions=1000000 us=225715 instructions/s=4430365
+memory copy MOV/STAX/INX/DCR/JNZ instructions=1000000 us=141424 instructions/s=7070935
+call/stack CALL/PUSH/POP/RET instructions=1000000 us=200000 instructions/s=5000000
+register/branch DCR/JNZ instructions=1000000 us=173230 instructions/s=5772672
+arithmetic ADI/XRI/RLC/RAR/ADD/DAA instructions=1000000 us=225715 instructions/s=4430365
+memory copy MOV/STAX/INX/DCR/JNZ instructions=1000000 us=141425 instructions/s=7070885
+call/stack CALL/PUSH/POP/RET instructions=1000000 us=200000 instructions/s=5000000
+register/branch DCR/JNZ instructions=1000000 us=173230 instructions/s=5772672
+arithmetic ADI/XRI/RLC/RAR/ADD/DAA instructions=1000000 us=225715 instructions/s=4430365
+memory copy MOV/STAX/INX/DCR/JNZ instructions=1000000 us=141425 instructions/s=7070885
+call/stack CALL/PUSH/POP/RET instructions=1000000 us=200000 instructions/s=5000000
+register/branch DCR/JNZ instructions=1000000 us=173230 instructions/s=5772672
+arithmetic ADI/XRI/RLC/RAR/ADD/DAA instructions=1000000 us=225715 instructions/s=4430365
+memory copy MOV/STAX/INX/DCR/JNZ instructions=1000000 us=141425 instructions/s=7070885
+call/stack CALL/PUSH/POP/RET instructions=1000000 us=200001 instructions/s=4999975
+register/branch DCR/JNZ instructions=1000000 us=173230 instructions/s=5772672
+arithmetic ADI/XRI/RLC/RAR/ADD/DAA instructions=1000000 us=225715 instructions/s=4430365
+memory copy MOV/STAX/INX/DCR/JNZ instructions=1000000 us=141425 instructions/s=7070885
+call/stack CALL/PUSH/POP/RET instructions=1000000 us=200000 instructions/s=5000000
+register/branch DCR/JNZ instructions=1000000 us=173230 instructions/s=5772672
+arithmetic ADI/XRI/RLC/RAR/ADD/DAA instructions=1000000 us=225715 instructions/s=4430365
+memory copy MOV/STAX/INX/DCR/JNZ instructions=1000000 us=141425 instructions/s=7070885
+call/stack CALL/PUSH/POP/RET instructions=1000000 us=200001 instructions/s=4999975
+register/branch DCR/JNZ instructions=1000000 us=173230 instructions/s=5772672
+arithmetic ADI/XRI/RLC/RAR/ADD/DAA instructions=1000000 us=225714 instructions/s=4430385
+memory copy MOV/STAX/INX/DCR/JNZ instructions=1000000 us=141425 instructions/s=7070885
+call/stack CALL/PUSH/POP/RET instructions=1000000 us=200000 instructions/s=5000000

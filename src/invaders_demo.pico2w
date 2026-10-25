@@ -1,0 +1,5 @@
+; The PureMetal demo (demo/demo.invaders) on the Space Invaders machine, on
+; the Pico 2 W with the LAFVIN ST7796 panel. No sound (no radio in this build).
+#INV_TEST = 0
+XIncludeFile "invaders_rp2350.pmi"
+InvMain()

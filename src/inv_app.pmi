@@ -1,6 +1,8 @@
 ; The Space Invaders machine on a Pico: core 0 runs a frame of the machine
 ; (8080, interrupts, sound into its ring) every 1/60 s and hands the picture
-; to core 1 row by row; core 1 drives the panel and the radio.
+; to core 1 as a snapshot of video RAM; core 1 draws it on the panel and
+; drives the radio. The same file serves the Pico W and the Pico 2 W
+; (src/invaders_rp2040.pmi, src/invaders_rp2350.pmi).
 ;
 ; The ROM is built in (InvRom, from tools/embed_rom.py). With #INV_TEST = 1
 ; it is the machine test ROM and, after 120 frames, the board checks what it
@@ -11,9 +13,13 @@
 ; for 0.2 s: a left, d right, f fire, c coin, 1 / 2 start; m mute, r reset.
 ; Out: INVADERS_STATUS once a second.
 
-Global AppNext.i, AppEmuUs.i, AppWorstUs.i, AppFrames.i, AppLate.i, AppT.i, AppRow.i, AppDst.i
+Global AppNext.i, AppEmuUs.i, AppWorstUs.i, AppFrames.i, AppLate.i, AppT.i, AppRow.i
 Global AppReport.i, AppLastOut.i, AppLastVf.i, AppLastSamples.i, AppStep.i
 Global AppResetRequest.i
+; Each core's busy share: core 0 is idle only while it waits for the next 60 Hz
+; tick; core 1 counts the passes in which it converted rows, started a transfer
+; or drove the radio (its own total, never reset, read as a difference).
+Global AppIdleUs.i, AppIdleT.i, Core1T.i, Core1BusyUs.i, AppLastC1.i, AppSpan.i
 Global Core1Ready.i, InHost.i, InHostUntil.i, InLast.i, InCenterX.i = 2048, InButtons.i
 
 ProcedureRAM Core1Main()
@@ -24,8 +30,17 @@ ProcedureRAM Core1Main()
       While PeekL(@Core1ParkRequest) : Wend
       Core1Parked = 0
     EndIf
+    ; An upload's reboot is pending (the 1200-baud touch): core 1 stops here,
+    ; in SRAM, so core 0 takes the reboot with nothing else running.
+    If usbser_bootpend Or usbser_resetpend
+      Repeat : ForEver
+    EndIf
+    Core1T = Micros() : VidDid = 0 : AudioDid = 0
     VideoPoll()
     AudioPoll()
+    If VidDid Or AudioDid
+      Core1BusyUs = Core1BusyUs + Micros() - Core1T
+    EndIf
   ForEver
 EndProcedure
 
@@ -79,13 +94,10 @@ Procedure AppTick()
   If key >= 0 : AppHostKey(key) : EndIf
 EndProcedure
 
-; The picture of the frame just run, row by row, to core 1.
+; The picture of the frame just run: a snapshot of video RAM for core 1, which
+; draws it (src/inv_video.pmi).
 Procedure AppPicture()
-  For AppRow = 0 To 255
-    AppDst = VidLine(AppRow)
-    InvLineIndices(AppRow, AppDst)
-    VidLineDone()
-  Next
+  VidSnapshot()
 EndProcedure
 
 CompilerIf #INV_TEST = 1
@@ -141,7 +153,7 @@ Procedure AppSetup()
 EndProcedure
 
 Procedure AppStart()
-  Say("INVADERS core1 launch=") : Num(multicore_launch()) : Eol()
+  Say("INVADERS core1 launch=") : Num(AppLaunchCore1()) : Eol()
   AppT = Micros()
   While PeekL(@Core1Ready) = 0 And Micros() - AppT < 1000000 : SafetyPet() : Wend
   AudioBegin()
@@ -179,17 +191,22 @@ Procedure AppAfterFrame()
     AppNext = Micros() : AppLate = AppLate + 1
   EndIf
   AppTick()
+  AppIdleT = Micros()
   While Micros() - AppNext < 0
     AppTick()
   Wend
+  AppIdleUs = AppIdleUs + Micros() - AppIdleT
   If Micros() - AppReport >= 1000000
     Say("INVADERS_STATUS frames=") : Num(AppFrames) : Say(" emu_us=") : Num(AppEmuUs) : Say(" worst_us=") : Num(AppWorstUs)
     Say(" lines_out=") : Num(VidLinesOut - AppLastOut) : Say(" lcd_frames=") : Num(VidFrames - AppLastVf)
-    Say(" vid_wait_us=") : Num(VidWaitUs) : Say(" samples=") : Num(InvSamples - AppLastSamples)
+    Say(" vid_dropped=") : Num(VidDropped) : Say(" samples=") : Num(InvSamples - AppLastSamples)
     Say(" in1=") : Num(InvIn1) : Say(" bt_live=") : Num(AudioLive) : Say(" bt_under=") : Num(AudioUnderruns)
-    Say(" bt_packets=") : Num(AudioPackets) : Say(" late=") : Num(AppLate) : Say(" machine_frames=") : Num(InvFrames) : Eol()
-    AppLastOut = VidLinesOut : AppLastVf = VidFrames : AppLastSamples = InvSamples
-    AppFrames = 0 : AppEmuUs = 0 : AppWorstUs = 0 : VidWaitUs = 0 : AppReport = Micros()
+    Say(" bt_packets=") : Num(AudioPackets) : Say(" late=") : Num(AppLate) : Say(" machine_frames=") : Num(InvFrames)
+    AppSpan = Micros() - AppReport
+    Say(" core0_busy_pct=") : Num(((AppSpan - AppIdleUs) / 100) * 10000 / (AppSpan / 100) / 100)
+    Say(" core1_busy_pct=") : Num(((Core1BusyUs - AppLastC1) / 100) * 10000 / (AppSpan / 100) / 100) : Eol()
+    AppLastOut = VidLinesOut : AppLastVf = VidFrames : AppLastSamples = InvSamples : AppLastC1 = Core1BusyUs
+    AppFrames = 0 : AppEmuUs = 0 : AppWorstUs = 0 : VidDropped = 0 : AppIdleUs = 0 : AppReport = Micros()
   EndIf
 EndProcedure
 

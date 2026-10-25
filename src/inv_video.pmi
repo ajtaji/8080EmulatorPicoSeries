@@ -1,0 +1,177 @@
+; The machine's picture on the LAFVIN ST7796 (480 x 320, landscape), 1:1,
+; centred: the upright 224 x 256 screen at (128, 32).
+;
+; The work is split between the cores:
+;   core 0, after each emulated frame, copies the 7 KB of video RAM into a
+;   snapshot (VidSnapshot) - but only once core 1 has finished sending the
+;   previous one, so a picture is never torn; a frame that comes while core 1
+;   is still busy is not shown (VidDropped);
+;   core 1 (VideoPoll) turns the snapshot's bits straight into RGB565 rows,
+;   with the cabinet's colour bands, four rows to a buffer, two buffers, and
+;   sends them with SPI0's DMA while it converts the next four.
+; The DMA part follows the C64 emulator's driver for the same panel.
+;
+; LAFVIN wiring, the same on the Pico W and the Pico 2 W: SCK GP2, MOSI GP3
+; (SPI0, asked for 100 MHz; SpiHz says what clk_peri gives), CS GP5, DC GP6,
+; RST GP7. The SPI registers and the DMA request differ between the chips, so
+; they are read from the target's spi library once, in VideoBegin, and the
+; target's file sets #VID_TREQ_SHIFT (RP2040 15, RP2350 17).
+#VID_X0 = 128
+#VID_Y0 = 32
+#VID_W = 224
+#VID_H = 256
+#VID_BATCH = 4
+Global Dim Snap.l(1792)                 ; video RAM $2400-$3FFF, word-aligned
+Global Dim DmaBuf.u(2 * #VID_BATCH * #VID_W)
+Global SnapFrame.i, ShownFrame.i, VidActive.i, VidRow.i, VidDropped.i
+Global VidOpen.i, VidBusy.i, VidCur.i, VidPending.i, VidPendingLines.i
+Global VidFrames.i, VidLinesOut.i, VidWaitUs.i
+Global VidDid.i                         ; 1 when a VideoPoll did work (rows converted, a transfer started)
+Global Pal0.i, Pal1.i, PalRed.i, PalGreen.i
+Global VidSpi.i, VidDmaCtrl.i              ; SPI0's base; the DMA control word for SPI0's TX
+
+ProcedureRAM VidFence()
+  ASM
+    dmb
+  EndASM
+EndProcedure
+
+Procedure VideoBegin()
+  Pal0 = $0000                          ; black
+  Pal1 = $F79E                          ; white
+  PalRed = $F988                        ; the red band
+  PalGreen = $37EC                      ; the green band
+  SpiPeriFromSys(#CLOCK_KHZ)
+  SpiBegin(0, 2, 3, -1, 100000)
+  Tft796Begin(0, 5, 6, 7) : Tft796Rotate(1) : Tft796Fill(0)
+  VidSpi = __SpiBase(0)
+  VidDmaCtrl = #SPI_DMA_EN | #SPI_DMA_SIZE_HALF | #SPI_DMA_INCR_READ | (SpiDmaTreq(0) << #VID_TREQ_SHIFT)
+EndProcedure
+
+; Core 0, after a frame: the snapshot, if core 1 is done with the last one.
+Global SnapI.i, SnapSrc.i
+Procedure VidSnapshot()
+  If PeekL(@ShownFrame) <> SnapFrame
+    VidDropped = VidDropped + 1
+    ProcedureReturn
+  EndIf
+  SnapSrc = @M(0) + $2400
+  For SnapI = 0 To 1791
+    Snap(SnapI) = PeekL(SnapSrc + SnapI * 4)
+  Next
+  VidFence()
+  SnapFrame = SnapFrame + 1
+EndProcedure
+
+; Core 1 side ------------------------------------------------------------
+ProcedureRAM VidDmaStart(pointer.i, halfwords.i)
+  PokeL(#SPI_DMA_CH0_READ, pointer)
+  PokeL(#SPI_DMA_CH0_WRITE, VidSpi + 8)
+  PokeL(#SPI_DMA_CH0_COUNT, halfwords)
+  PokeL(#SPI_DMA_CH0_CTRL, VidDmaCtrl)
+EndProcedure
+ProcedureRAM.i VidDmaIdle()
+  If PeekL(#SPI_DMA_CH0_CTRL) & #SPI_DMA_BUSY : ProcedureReturn 0 : EndIf
+  If PeekL(VidSpi + 12) & #SPI_SR_BSY : ProcedureReturn 0 : EndIf
+  ProcedureReturn 1
+EndProcedure
+Procedure VidClose()
+  If VidOpen
+    SpiDmaRestore(0) : Tft796PinSet(tft796_cs, 1)
+    VidOpen = 0
+  EndIf
+EndProcedure
+; Open the panel's window over the whole picture.
+Procedure VidOpenFrame()
+  VidClose()
+  Tft796Window(#VID_X0, #VID_Y0, #VID_X0 + #VID_W - 1, #VID_Y0 + #VID_H - 1)
+  SpiDmaInit() : SpiSetBits(0, 16)
+  Tft796PinSet(tft796_dc, 1) : Tft796PinSet(tft796_cs, 0)
+  PokeL(VidSpi + 36, PeekL(VidSpi + 36) | #SPI_SSPDMACR_TXDMAE)
+  VidOpen = 1
+EndProcedure
+
+; Screen row r (0 = the top of the upright screen) from the snapshot's bits:
+; y = 255 - r counts up from the bottom; byte x*32 + (y >> 3), bit (y & 7).
+; Rows 32-63 are the red band, 184-239 green, and below 240 green only between
+; columns 16 and 133.
+ProcedureRAM VidRow565(r.i, dst.i)
+  Protected y.i, src.i, bit.i, on.i, x.i, lo.i, hi.i
+  y = 255 - r
+  src = @Snap(0) + (y >> 3)
+  bit = 1 << (y & 7)
+  on = Pal1 : lo = 0 : hi = 224
+  If r >= 32 And r < 64 : on = PalRed : EndIf
+  If r >= 184 And r < 240 : on = PalGreen : EndIf
+  If r >= 240 : lo = 16 : hi = 134 : on = PalGreen : EndIf
+  For x = 0 To 223
+    If PeekA(src) & bit
+      If x >= lo And x < hi
+        PokeU(dst, on)
+      Else
+        PokeU(dst, Pal1)
+      EndIf
+    Else
+      PokeU(dst, Pal0)
+    EndIf
+    src = src + 32
+    dst = dst + 2
+  Next
+EndProcedure
+
+; Up to #VID_BATCH rows into buffer VidCur.
+ProcedureRAM.i VidConvert()
+  Protected n.i, dst.i
+  dst = @DmaBuf(VidCur * #VID_BATCH * #VID_W)
+  n = 0
+  While n < #VID_BATCH And VidRow < #VID_H
+    VidRow565(VidRow, dst)
+    dst = dst + #VID_W * 2
+    VidRow = VidRow + 1
+    n = n + 1
+  Wend
+  ProcedureReturn n
+EndProcedure
+
+ProcedureRAM VideoPoll()
+  If VidBusy
+    If VidDmaIdle() = 0
+      ; while the panel takes one buffer, fill the other
+      If VidPending = 0 And VidActive And VidRow < #VID_H
+        VidDid = 1
+        VidPendingLines = VidConvert()
+        If VidPendingLines : VidPending = 1 : EndIf
+      EndIf
+      ProcedureReturn
+    EndIf
+    VidBusy = 0
+  EndIf
+  If VidPending
+    VidDid = 1
+    VidDmaStart(@DmaBuf(VidCur * #VID_BATCH * #VID_W), VidPendingLines * #VID_W)
+    VidLinesOut = VidLinesOut + VidPendingLines
+    VidCur = 1 - VidCur : VidBusy = 1 : VidPending = 0
+    ProcedureReturn
+  EndIf
+  If VidActive
+    If VidRow >= #VID_H
+      ; every row sent: this snapshot is shown, core 0 may take the next
+      VidActive = 0
+      VidFrames = VidFrames + 1
+      VidFence()
+      ShownFrame = ShownFrame + 1
+      ProcedureReturn
+    EndIf
+    VidDid = 1
+    VidPendingLines = VidConvert()
+    If VidPendingLines : VidPending = 1 : EndIf
+    ProcedureReturn
+  EndIf
+  If PeekL(@SnapFrame) <> ShownFrame
+    ; a new snapshot: open the window at the top and start converting
+    VidDid = 1
+    VidFence()
+    VidOpenFrame()
+    VidRow = 0 : VidActive = 1
+  EndIf
+EndProcedure

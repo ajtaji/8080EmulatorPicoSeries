@@ -1,6 +1,6 @@
 ; No radio in this build: the machine still fills its sound ring; nothing plays it.
 Global AudioRunning.i, AudioLive.i, AudioUnderruns.i, AudioPackets.i
-Global Core1ParkRequest.i, Core1Parked.i
+Global Core1ParkRequest.i, Core1Parked.i, AudioDid.i
 Procedure InvBluetoothSetPeer(src.i)
 EndProcedure
 Procedure AudioBegin()

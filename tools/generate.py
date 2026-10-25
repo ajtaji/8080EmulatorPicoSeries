@@ -180,7 +180,7 @@ LAYOUT = {
     EndASM''',
     ),
     # RP2350: the layout measured fastest (docs/benchmark-pico2w-thumb2.log): the
-    # tail loads the handler with a scaled ldr, and the hot handlers are Thumb-2
+    # tail branches through the table with one scaled ldr pc, and the hot handlers are Thumb-2
     # (tools/t2_handlers.py).
     'pico2': dict(
         reserve='ReserveRegister CpuPC = r4, CpuA = r9, Res = r10, Left = r11, CpuHL = r8, FR = r5, TableBase = r6',
@@ -191,8 +191,29 @@ LAYOUT = {
       ldrb r2, [r1, r4]
       adds r4, #1
       uxth r4, r4
-      ldr r1, [r6, r2, lsl #2]
-      bx r1
+      ldr pc, [r6, r2, lsl #2]
+    EndASM''',
+        charge='''    ASM Uses Left
+      subs.w r11, r11, #{c}
+      {br} __ul_cpurun_done
+    EndASM''',
+        t2=True,
+    ),
+    # RP2350 for programs that also include big library code (src/i8080_lib.pico2):
+    # 'pico2' without TableBase. Reserving both r5 and r6 leaves the compiler a
+    # spill pool of three registers, and some library procedures need four
+    # (st7796.pico2's Tft796Fill); here the table's address is a literal load.
+    'pico2_lib': dict(
+        reserve='ReserveRegister CpuPC = r4, CpuA = r9, Res = r10, Left = r11, CpuHL = r8, FR = r5',
+        table_global='',
+        table_init='',
+        dispatch='''    ASM Uses CpuPC
+      ldr r1, =global_m
+      ldrb r2, [r1, r4]
+      adds r4, #1
+      uxth r4, r4
+      ldr r1, =global_dispatch
+      ldr pc, [r1, r2, lsl #2]
     EndASM''',
         charge='''    ASM Uses Left
       subs.w r11, r11, #{c}
@@ -724,7 +745,7 @@ if __name__ == '__main__':
     ap.add_argument('--rp2040', default='pico', choices=[k for k in LAYOUT if k.startswith('pico') and not k.startswith('pico2')])
     ap.add_argument('--rp2350', default='pico2', choices=[k for k in LAYOUT if k.startswith('pico2')])
     args = ap.parse_args()
-    for target, name in ((args.rp2040, 'i8080.pico'), (args.rp2350, 'i8080.pico2')):
+    for target, name in ((args.rp2040, 'i8080.pico'), (args.rp2350, 'i8080.pico2'), ('pico2_lib', 'i8080_lib.pico2')):
         text = generate(target)
         (ROOT / 'src' / name).write_text(text, encoding='utf-8')
         print(f'{name}: {text.count(chr(10))} lines')

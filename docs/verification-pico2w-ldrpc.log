@@ -1,0 +1,515 @@
+﻿=== JOB -Source src/demo.pico2w -Output firmware/8080-pico2w.uf2 -Port COM6 -Seconds 10
+pmfc: C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\src\demo.pico2w  ->  RP2350
+> Intrinsics for RP2350: rp2350_hardware.def
+[DEBUG] Attempting to load intrinsics from: C:\Users\ajtaj\Desktop\Github\PureBasicCode\OpenGl Work\ArduinoBasic\RP2350\Intrinsics\rp2350_hardware.def
+> Loaded 12442 register names from rp2350_registers.def
+> Loaded Hardware Intrinsics from rp2350_hardware.def
+pmfc: pin aliases from Boards/Raspberry_Pi_Pico_2_W.board
+> ReserveRegister: 7 reservation(s) on RP2350
+> RESERVE CpuPC -> r4 (.i, 4 bytes, reg 4, span 1) at i8080.pico2 line 33 (included)
+> RESERVE CpuA -> r9 (.i, 4 bytes, reg 9, span 1) at i8080.pico2 line 33 (included)
+> RESERVE Res -> r10 (.i, 4 bytes, reg 10, span 1) at i8080.pico2 line 33 (included)
+> RESERVE Left -> r11 (.i, 4 bytes, reg 11, span 1) at i8080.pico2 line 33 (included)
+> RESERVE CpuHL -> r8 (.i, 4 bytes, reg 8, span 1) at i8080.pico2 line 33 (included)
+> RESERVE FR -> r5 (.i, 4 bytes, reg 5, span 1) at i8080.pico2 line 33 (included)
+> RESERVE TableBase -> r6 (.i, 4 bytes, reg 6, span 1) at i8080.pico2 line 33 (included)
+> F_CPU = 150000000 Hz, from the board's ClockSpeed - delay_ms and the baud divisors follow it.
+> ReserveRegister proof (RP2350): 13664 lines, 73 routines; core 0 reaches 6835 instructions, core 1 0, interrupt handlers 20 - r12 and r4-r7 hold
+pmfc: 13664 lines of assembly
+pmfc: wrote C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\firmware\8080-pico2w.uf2.asm
+> RP2350 ASSEMBLER: Starting Pass 1 (Resolving Labels)...
+> RP2350 ASSEMBLER: 16340 bytes of code run from SRAM at $20000000-$20003FD3, copied from flash at boot; 444124 bytes of SRAM left free, stacks and reserved windows excluded.
+> RP2350 ASSEMBLER: branch relaxation converged in 3 rounds.
+> RP2350 ASSEMBLER: Starting Pass 2 (Generating Machine Code)...
+> RP2350 ASSEMBLER: Wrote cycle-timing listing to C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\firmware\8080-pico2w.cycles.txt
+> RP2350 ASSEMBLER: Writing raw binary to C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\firmware\8080-pico2w.uf2
+[TELEMETRY_START]
+ROM_TOTAL_RP2350|27744|4194304
+CYCLES_TOTAL_RP2350|16271|straight-line, not-taken branches
+REGMAP_RP2350|1873|67|8|314|materialisations seen|already in dest|already in another reg|nearby constant
+SLOTMAP_RP2350|69|frame-slot loads taken from a register
+[TELEMETRY_END]
+pmfc: 8080-pico2w.uf2 is named .uf2, so the image is written as a UF2, exactly as an upload packs it: Packed 27744 bytes into 109 blocks -> C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\firmware\8080-pico2w.uf2
+pmfc: wrote C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\firmware\8080-pico2w.uf2
+pmfc: OK
+pmfc: C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\src\demo.pico2w  ->  RP2350
+> Intrinsics for RP2350: rp2350_hardware.def
+[DEBUG] Attempting to load intrinsics from: C:\Users\ajtaj\Desktop\Github\PureBasicCode\OpenGl Work\ArduinoBasic\RP2350\Intrinsics\rp2350_hardware.def
+> Loaded 12442 register names from rp2350_registers.def
+> Loaded Hardware Intrinsics from rp2350_hardware.def
+pmfc: pin aliases from Boards/Raspberry_Pi_Pico_2_W.board
+> ReserveRegister: 7 reservation(s) on RP2350
+> RESERVE CpuPC -> r4 (.i, 4 bytes, reg 4, span 1) at i8080.pico2 line 33 (included)
+> RESERVE CpuA -> r9 (.i, 4 bytes, reg 9, span 1) at i8080.pico2 line 33 (included)
+> RESERVE Res -> r10 (.i, 4 bytes, reg 10, span 1) at i8080.pico2 line 33 (included)
+> RESERVE Left -> r11 (.i, 4 bytes, reg 11, span 1) at i8080.pico2 line 33 (included)
+> RESERVE CpuHL -> r8 (.i, 4 bytes, reg 8, span 1) at i8080.pico2 line 33 (included)
+> RESERVE FR -> r5 (.i, 4 bytes, reg 5, span 1) at i8080.pico2 line 33 (included)
+> RESERVE TableBase -> r6 (.i, 4 bytes, reg 6, span 1) at i8080.pico2 line 33 (included)
+> F_CPU = 150000000 Hz, from the board's ClockSpeed - delay_ms and the baud divisors follow it.
+> ReserveRegister proof (RP2350): 13664 lines, 73 routines; core 0 reaches 6835 instructions, core 1 0, interrupt handlers 20 - r12 and r4-r7 hold
+pmfc: 13664 lines of assembly
+pmfc: wrote C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\firmware\8080-pico2w.uf2.asm
+> RP2350 ASSEMBLER: Starting Pass 1 (Resolving Labels)...
+> RP2350 ASSEMBLER: 16340 bytes of code run from SRAM at $20000000-$20003FD3, copied from flash at boot; 444124 bytes of SRAM left free, stacks and reserved windows excluded.
+> RP2350 ASSEMBLER: branch relaxation converged in 3 rounds.
+> RP2350 ASSEMBLER: Starting Pass 2 (Generating Machine Code)...
+> RP2350 ASSEMBLER: Wrote cycle-timing listing to C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\firmware\8080-pico2w.cycles.txt
+> RP2350 ASSEMBLER: Writing raw binary to C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\firmware\8080-pico2w.uf2
+[TELEMETRY_START]
+ROM_TOTAL_RP2350|27744|4194304
+CYCLES_TOTAL_RP2350|16271|straight-line, not-taken branches
+REGMAP_RP2350|1873|67|8|314|materialisations seen|already in dest|already in another reg|nearby constant
+SLOTMAP_RP2350|69|frame-slot loads taken from a register
+[TELEMETRY_END]
+pmfc: 8080-pico2w.uf2 is named .uf2, so the image is written as a UF2, exactly as an upload packs it: Packed 27744 bytes into 109 blocks -> C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\firmware\8080-pico2w.uf2
+pmfc: wrote C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\firmware\8080-pico2w.uf2
+pmfc: uploading 8080-pico2w.uf2 (RP2350) through COM6
+> [UF2] 8080-pico2w.uf2 is a ready UF2: 109 blocks for the RP2350's Arm cores (Pico 2 / Pico 2 W), family ID 0xE48BFF59, writing 0x10000000 to 0x10006CFF. It is sent exactly as it is: it is not packed again, and the file is not changed.
+> [NATIVE UPLOADER] Sending BOOTSEL reset command to COM6 (the 1200-baud touch)...
+> [NATIVE UPLOADER] COM6 left the bus after the 1200-baud touch (0.0 s): the board is going to its boot loader.
+> [NATIVE UPLOADER] Waiting for matching BOOTSEL drive: RP2350 (Pico 2)...
+> [NATIVE UPLOADER] The running program reported a serial of its own (3D00D889CF7F499A); the boot drive at H:\ carries the chip's serial (EF5FEE9AE36E80EC) and was taken as the one boot drive that appeared after the reset, not matched by serial.
+> [NATIVE UPLOADER] Found BOOTSEL drive at H:\
+> [NATIVE UPLOADER] Writing image: 55808 of 55808 bytes (100%)
+> [NATIVE UPLOADER] Wrote 8080-pico2w.uf2 to H:\
+> [NATIVE UPLOADER] FLASH COMPLETE! Board will reboot into the new firmware automatically.
+> [NATIVE UPLOADER] Serial monitor: the board that was flashed has not come back on its USB connection within 20s, so the monitor was not attached. If it is running a program that does not open USB serial, that is expected. The other Pico port(s) present (COM16, COM7, COM20) are on a different USB connection - another board - and were left alone.
+pmfc: uploaded. No serial capture: the board did not come back on a USB serial port after the flash (a program that includes no USB serial library has none).
+pmfc: OK
+
+Algorithm Hash                                                             Path                                        
+--------- ----                                                             ----                                        
+SHA256    EE03FB06C0C3CEFE9CE79C2E7405AB3CE0C5BDE69F893F7258E897C64BA5D6F0 C:\Users\ajtaj\Desktop\Github\PureBasicCo...
+SHA256    C4244C40EDBE09A29566F0316BB1A84BA034F2EA1A96FC54CD7BC3950100C90A C:\Users\ajtaj\Desktop\Github\8080Emulato...
+SHA256    FB1906184A9956A2A0B47307989706029A2E9F5965AC3506C2DB1180861AAE4D C:\Users\ajtaj\Desktop\Github\8080Emulato...
+
+
+=== JOB -Source Diagnostics/verify-fast.pico2w -Output bench/pico2_t2c/verify-fast-ldrpc.uf2 -Port COM6 -Seconds 800
+pmfc: C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\Diagnostics\verify-fast.pico2w  ->  RP2350
+> Intrinsics for RP2350: rp2350_hardware.def
+[DEBUG] Attempting to load intrinsics from: C:\Users\ajtaj\Desktop\Github\PureBasicCode\OpenGl Work\ArduinoBasic\RP2350\Intrinsics\rp2350_hardware.def
+> Loaded 12442 register names from rp2350_registers.def
+> Loaded Hardware Intrinsics from rp2350_hardware.def
+pmfc: pin aliases from Boards/Raspberry_Pi_Pico_2_W.board
+> ReserveRegister: 7 reservation(s) on RP2350
+> RESERVE CpuPC -> r4 (.i, 4 bytes, reg 4, span 1) at i8080.pico2 line 33 (included)
+> RESERVE CpuA -> r9 (.i, 4 bytes, reg 9, span 1) at i8080.pico2 line 33 (included)
+> RESERVE Res -> r10 (.i, 4 bytes, reg 10, span 1) at i8080.pico2 line 33 (included)
+> RESERVE Left -> r11 (.i, 4 bytes, reg 11, span 1) at i8080.pico2 line 33 (included)
+> RESERVE CpuHL -> r8 (.i, 4 bytes, reg 8, span 1) at i8080.pico2 line 33 (included)
+> RESERVE FR -> r5 (.i, 4 bytes, reg 5, span 1) at i8080.pico2 line 33 (included)
+> RESERVE TableBase -> r6 (.i, 4 bytes, reg 6, span 1) at i8080.pico2 line 33 (included)
+> F_CPU = 150000000 Hz, from the board's ClockSpeed - delay_ms and the baud divisors follow it.
+> ReserveRegister proof (RP2350): 18938 lines, 83 routines; core 0 reaches 9555 instructions, core 1 0, interrupt handlers 20 - r12 and r4-r7 hold
+pmfc: 18938 lines of assembly
+pmfc: wrote C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\bench\pico2_t2c\verify-fast-ldrpc.uf2.asm
+> RP2350 ASSEMBLER: Starting Pass 1 (Resolving Labels)...
+> RP2350 ASSEMBLER: 16340 bytes of code run from SRAM at $20000000-$20003FD3, copied from flash at boot; 427608 bytes of SRAM left free, stacks and reserved windows excluded.
+> RP2350 ASSEMBLER: branch relaxation converged in 3 rounds.
+> RP2350 ASSEMBLER: Starting Pass 2 (Generating Machine Code)...
+> RP2350 ASSEMBLER: Wrote cycle-timing listing to C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\bench\pico2_t2c\verify-fast-ldrpc.cycles.txt
+> RP2350 ASSEMBLER: Writing raw binary to C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\bench\pico2_t2c\verify-fast-ldrpc.uf2
+[TELEMETRY_START]
+ROM_TOTAL_RP2350|62048|4194304
+CYCLES_TOTAL_RP2350|20909|straight-line, not-taken branches
+REGMAP_RP2350|2909|79|80|384|materialisations seen|already in dest|already in another reg|nearby constant
+SLOTMAP_RP2350|69|frame-slot loads taken from a register
+[TELEMETRY_END]
+pmfc: verify-fast-ldrpc.uf2 is named .uf2, so the image is written as a UF2, exactly as an upload packs it: Packed 62048 bytes into 243 blocks -> C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\bench\pico2_t2c\verify-fast-ldrpc.uf2
+pmfc: wrote C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\bench\pico2_t2c\verify-fast-ldrpc.uf2
+pmfc: OK
+pmfc: C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\Diagnostics\verify-fast.pico2w  ->  RP2350
+> Intrinsics for RP2350: rp2350_hardware.def
+[DEBUG] Attempting to load intrinsics from: C:\Users\ajtaj\Desktop\Github\PureBasicCode\OpenGl Work\ArduinoBasic\RP2350\Intrinsics\rp2350_hardware.def
+> Loaded 12442 register names from rp2350_registers.def
+> Loaded Hardware Intrinsics from rp2350_hardware.def
+pmfc: pin aliases from Boards/Raspberry_Pi_Pico_2_W.board
+> ReserveRegister: 7 reservation(s) on RP2350
+> RESERVE CpuPC -> r4 (.i, 4 bytes, reg 4, span 1) at i8080.pico2 line 33 (included)
+> RESERVE CpuA -> r9 (.i, 4 bytes, reg 9, span 1) at i8080.pico2 line 33 (included)
+> RESERVE Res -> r10 (.i, 4 bytes, reg 10, span 1) at i8080.pico2 line 33 (included)
+> RESERVE Left -> r11 (.i, 4 bytes, reg 11, span 1) at i8080.pico2 line 33 (included)
+> RESERVE CpuHL -> r8 (.i, 4 bytes, reg 8, span 1) at i8080.pico2 line 33 (included)
+> RESERVE FR -> r5 (.i, 4 bytes, reg 5, span 1) at i8080.pico2 line 33 (included)
+> RESERVE TableBase -> r6 (.i, 4 bytes, reg 6, span 1) at i8080.pico2 line 33 (included)
+> F_CPU = 150000000 Hz, from the board's ClockSpeed - delay_ms and the baud divisors follow it.
+> ReserveRegister proof (RP2350): 18938 lines, 83 routines; core 0 reaches 9555 instructions, core 1 0, interrupt handlers 20 - r12 and r4-r7 hold
+pmfc: 18938 lines of assembly
+pmfc: wrote C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\bench\pico2_t2c\verify-fast-ldrpc.uf2.asm
+> RP2350 ASSEMBLER: Starting Pass 1 (Resolving Labels)...
+> RP2350 ASSEMBLER: 16340 bytes of code run from SRAM at $20000000-$20003FD3, copied from flash at boot; 427608 bytes of SRAM left free, stacks and reserved windows excluded.
+> RP2350 ASSEMBLER: branch relaxation converged in 3 rounds.
+> RP2350 ASSEMBLER: Starting Pass 2 (Generating Machine Code)...
+> RP2350 ASSEMBLER: Wrote cycle-timing listing to C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\bench\pico2_t2c\verify-fast-ldrpc.cycles.txt
+> RP2350 ASSEMBLER: Writing raw binary to C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\bench\pico2_t2c\verify-fast-ldrpc.uf2
+[TELEMETRY_START]
+ROM_TOTAL_RP2350|62048|4194304
+CYCLES_TOTAL_RP2350|20909|straight-line, not-taken branches
+REGMAP_RP2350|2909|79|80|384|materialisations seen|already in dest|already in another reg|nearby constant
+SLOTMAP_RP2350|69|frame-slot loads taken from a register
+[TELEMETRY_END]
+pmfc: verify-fast-ldrpc.uf2 is named .uf2, so the image is written as a UF2, exactly as an upload packs it: Packed 62048 bytes into 243 blocks -> C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\bench\pico2_t2c\verify-fast-ldrpc.uf2
+pmfc: wrote C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\bench\pico2_t2c\verify-fast-ldrpc.uf2
+pmfc: uploading verify-fast-ldrpc.uf2 (RP2350) through COM6
+> [UF2] verify-fast-ldrpc.uf2 is a ready UF2: 243 blocks for the RP2350's Arm cores (Pico 2 / Pico 2 W), family ID 0xE48BFF59, writing 0x10000000 to 0x1000F2FF. It is sent exactly as it is: it is not packed again, and the file is not changed.
+> [NATIVE UPLOADER] No Pico is on COM6 right now; the board waiting in BOOTSEL mode at I:\ is an RP2350 (Pico 2 / Pico 2 W) board, the chip this program is built for, so the program goes there.
+> [NATIVE UPLOADER] Found BOOTSEL drive at I:\
+> [NATIVE UPLOADER] Writing image: 65536 of 124416 bytes (52%)
+> [NATIVE UPLOADER] Writing image: 124416 of 124416 bytes (100%)
+> [NATIVE UPLOADER] Writing image: 124416 of 124416 bytes (100%)
+> [NATIVE UPLOADER] Wrote verify-fast-ldrpc.uf2 to I:\
+> [NATIVE UPLOADER] FLASH COMPLETE! Board will reboot into the new firmware automatically.
+> [NATIVE UPLOADER] Serial monitor: board found on COM6 (USB vendor ID 2E8A), the one Pico port that appeared after the flash.
+pmfc: reading COM6 at 9600 baud for 800 s (the port opened 2 ms after the upload, attempt 1).
+8080 verification clk_sys kHz=150001 timing=0 asm_tail=1 memmap=0
+API/interrupt/flag checks=8731 failures=0 PASS
+*** TST8080
+MICROCOSM ASSOCIATES 8080/8085 CPU DIAGNOSTIC
+ VERSION 1.0  (C) 1980
+
+ CPU IS OPERATIONAL
+TST8080 output PASS instructions=651 reference=651 count PASS ms=0
+*** 8080PRE
+8080 Preliminary tests complete
+8080PRE output PASS instructions=1061 reference=1061 count PASS ms=0
+*** CPUTEST
+<00><00><00><00><00><00>
+DIAGNOSTICS II V1.2 - CPU TEST
+COPYRIGHT (C) 1981 - SUPERSOFT ASSOCIATES
+
+ABCDEFGHIJKLMNOPQRSTUVWXYZ
+CPU IS 8080/8085
+BEGIN TIMING TEST
+<07><07>END TIMING TEST
+CPU TESTS OK
+
+CPUTEST output PASS instructions=33971311 reference=33971311 count PASS ms=4787
+*** 8080EXM
+8080 instruction exerciser
+
+dad <b,d,h,sp>................  [progress 100000000 ms=19461]
+  PASS! crc is:14474ba6
+
+aluop nn......................  [progress 200000000 ms=38095]
+  PASS! crc is:9e922f9e
+
+aluop <b,c,d,e,h,l,m,a>.......  [progress 300000000 ms=56904]
+  [progress 400000000 ms=75796]
+  [progress 500000000 ms=94689]
+  [progress 600000000 ms=113582]
+  [progress 700000000 ms=132474]
+  [progress 800000000 ms=151367]
+  [progress 900000000 ms=170259]
+  [progress 1000000000 ms=189151]
+  [progress 1100000000 ms=208044]
+  [progress 1200000000 ms=226937]
+  [progress 1300000000 ms=245830]
+  [progress 1400000000 ms=264723]
+  [progress 1500000000 ms=283615]
+  [progress 1600000000 ms=302508]
+  [progress 1700000000 ms=321400]
+  [progress 1800000000 ms=340293]
+  [progress 1900000000 ms=359185]
+  [progress 2000000000 ms=378078]
+  [progress 2100000000 ms=396970]
+  [progress 2200000000 ms=415863]
+  [progress 2300000000 ms=434756]
+  [progress 2400000000 ms=453649]
+  [progress 2500000000 ms=472542]
+  [progress 2600000000 ms=491436]
+  PASS! crc is:cf762c86
+
+<daa,cma,stc,cmc>.............  [progress 2700000000 ms=510119]
+  [progress 2800000000 ms=527894]
+  PASS! crc is:bb3f030c
+
+<inr,dcr> a...................  PASS! crc is:adb6460e
+
+<inr,dcr> b...................  PASS! crc is:83ed1345
+
+<inx,dcx> b...................  PASS! crc is:f79287cd
+
+<inr,dcr> c...................  PASS! crc is:e5f6721b
+
+<inr,dcr> d...................  PASS! crc is:15b5579a
+
+<inx,dcx> d...................  PASS! crc is:7f4e2501
+
+<inr,dcr> e...................  PASS! crc is:cf2ab396
+
+<inr,dcr> h...................  PASS! crc is:12b2952c
+
+<inx,dcx> h...................  PASS! crc is:9f2b23c0
+
+<inr,dcr> l...................  PASS! crc is:ff57d356
+
+<inr,dcr> m...................  PASS! crc is:92e963bd
+
+<inx,dcx> sp..................  PASS! crc is:d5702fab
+
+lhld nnnn.....................  PASS! crc is:a9c3d5cb
+
+shld nnnn.....................  PASS! crc is:e8864f26
+
+lxi <b,d,h,sp>,nnnn...........  PASS! crc is:fcf46e12
+
+ldax <b,d>....................  PASS! crc is:2b821d5f
+
+mvi <b,c,d,e,h,l,m,a>,nn......  PASS! crc is:eaa72044
+
+mov <bcdehla>,<bcdehla>.......  [progress 2900000000 ms=545803]
+  PASS! crc is:10b58cee
+
+sta nnnn / lda nnnn...........  PASS! crc is:ed57af72
+
+<rlc,rrc,ral,rar>.............  PASS! crc is:e0d89235
+
+stax <b,d>....................  PASS! crc is:2b0471e9
+
+Tests complete
+8080EXM output PASS instructions=2919050698 reference=2919050698 count PASS ms=549235
+verification complete failures=0 PASS
+
+pmfc: read COM6 for 800 s: 3243 bytes.
+pmfc: OK
+
+Algorithm Hash                                                             Path                                        
+--------- ----                                                             ----                                        
+SHA256    EE03FB06C0C3CEFE9CE79C2E7405AB3CE0C5BDE69F893F7258E897C64BA5D6F0 C:\Users\ajtaj\Desktop\Github\PureBasicCo...
+SHA256    4CE3F21557B35B8629EBDB78E860A0B7D0C9B90C22F51D57C8BD2793E772F7C6 C:\Users\ajtaj\Desktop\Github\8080Emulato...
+SHA256    E94FEAA3C98CAB05E41E90C2D9A179B920BE6AAFC6FADBD778C5F3F42B416C9A C:\Users\ajtaj\Desktop\Github\8080Emulato...
+
+
+=== JOB -Source bench/verify-timed-short.pico2w -Output bench/pico2_t2c/verify-timed-short.uf2 -Port COM6 -Seconds 75
+pmfc: C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\bench\verify-timed-short.pico2w  ->  RP2350
+> Intrinsics for RP2350: rp2350_hardware.def
+[DEBUG] Attempting to load intrinsics from: C:\Users\ajtaj\Desktop\Github\PureBasicCode\OpenGl Work\ArduinoBasic\RP2350\Intrinsics\rp2350_hardware.def
+> Loaded 12442 register names from rp2350_registers.def
+> Loaded Hardware Intrinsics from rp2350_hardware.def
+pmfc: pin aliases from Boards/Raspberry_Pi_Pico_2_W.board
+> ReserveRegister: 7 reservation(s) on RP2350
+> RESERVE CpuPC -> r4 (.i, 4 bytes, reg 4, span 1) at i8080.pico2 line 33 (included)
+> RESERVE CpuA -> r9 (.i, 4 bytes, reg 9, span 1) at i8080.pico2 line 33 (included)
+> RESERVE Res -> r10 (.i, 4 bytes, reg 10, span 1) at i8080.pico2 line 33 (included)
+> RESERVE Left -> r11 (.i, 4 bytes, reg 11, span 1) at i8080.pico2 line 33 (included)
+> RESERVE CpuHL -> r8 (.i, 4 bytes, reg 8, span 1) at i8080.pico2 line 33 (included)
+> RESERVE FR -> r5 (.i, 4 bytes, reg 5, span 1) at i8080.pico2 line 33 (included)
+> RESERVE TableBase -> r6 (.i, 4 bytes, reg 6, span 1) at i8080.pico2 line 33 (included)
+> F_CPU = 150000000 Hz, from the board's ClockSpeed - delay_ms and the baud divisors follow it.
+> ReserveRegister proof (RP2350): 19142 lines, 83 routines; core 0 reaches 9709 instructions, core 1 0, interrupt handlers 20 - r12 and r4-r7 hold
+pmfc: 19142 lines of assembly
+pmfc: wrote C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\bench\pico2_t2c\verify-timed-short.uf2.asm
+> RP2350 ASSEMBLER: Starting Pass 1 (Resolving Labels)...
+> RP2350 ASSEMBLER: 16408 bytes of code run from SRAM at $20000000-$20004017, copied from flash at boot; 427540 bytes of SRAM left free, stacks and reserved windows excluded.
+> RP2350 ASSEMBLER: branch relaxation converged in 3 rounds.
+> RP2350 ASSEMBLER: Starting Pass 2 (Generating Machine Code)...
+> RP2350 ASSEMBLER: Wrote cycle-timing listing to C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\bench\pico2_t2c\verify-timed-short.cycles.txt
+> RP2350 ASSEMBLER: Writing raw binary to C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\bench\pico2_t2c\verify-timed-short.uf2
+[TELEMETRY_START]
+ROM_TOTAL_RP2350|62492|4194304
+CYCLES_TOTAL_RP2350|21163|straight-line, not-taken branches
+REGMAP_RP2350|2962|78|85|385|materialisations seen|already in dest|already in another reg|nearby constant
+SLOTMAP_RP2350|69|frame-slot loads taken from a register
+[TELEMETRY_END]
+pmfc: verify-timed-short.uf2 is named .uf2, so the image is written as a UF2, exactly as an upload packs it: Packed 62492 bytes into 245 blocks -> C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\bench\pico2_t2c\verify-timed-short.uf2
+pmfc: wrote C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\bench\pico2_t2c\verify-timed-short.uf2
+pmfc: OK
+pmfc: C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\bench\verify-timed-short.pico2w  ->  RP2350
+> Intrinsics for RP2350: rp2350_hardware.def
+[DEBUG] Attempting to load intrinsics from: C:\Users\ajtaj\Desktop\Github\PureBasicCode\OpenGl Work\ArduinoBasic\RP2350\Intrinsics\rp2350_hardware.def
+> Loaded 12442 register names from rp2350_registers.def
+> Loaded Hardware Intrinsics from rp2350_hardware.def
+pmfc: pin aliases from Boards/Raspberry_Pi_Pico_2_W.board
+> ReserveRegister: 7 reservation(s) on RP2350
+> RESERVE CpuPC -> r4 (.i, 4 bytes, reg 4, span 1) at i8080.pico2 line 33 (included)
+> RESERVE CpuA -> r9 (.i, 4 bytes, reg 9, span 1) at i8080.pico2 line 33 (included)
+> RESERVE Res -> r10 (.i, 4 bytes, reg 10, span 1) at i8080.pico2 line 33 (included)
+> RESERVE Left -> r11 (.i, 4 bytes, reg 11, span 1) at i8080.pico2 line 33 (included)
+> RESERVE CpuHL -> r8 (.i, 4 bytes, reg 8, span 1) at i8080.pico2 line 33 (included)
+> RESERVE FR -> r5 (.i, 4 bytes, reg 5, span 1) at i8080.pico2 line 33 (included)
+> RESERVE TableBase -> r6 (.i, 4 bytes, reg 6, span 1) at i8080.pico2 line 33 (included)
+> F_CPU = 150000000 Hz, from the board's ClockSpeed - delay_ms and the baud divisors follow it.
+> ReserveRegister proof (RP2350): 19142 lines, 83 routines; core 0 reaches 9709 instructions, core 1 0, interrupt handlers 20 - r12 and r4-r7 hold
+pmfc: 19142 lines of assembly
+pmfc: wrote C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\bench\pico2_t2c\verify-timed-short.uf2.asm
+> RP2350 ASSEMBLER: Starting Pass 1 (Resolving Labels)...
+> RP2350 ASSEMBLER: 16408 bytes of code run from SRAM at $20000000-$20004017, copied from flash at boot; 427540 bytes of SRAM left free, stacks and reserved windows excluded.
+> RP2350 ASSEMBLER: branch relaxation converged in 3 rounds.
+> RP2350 ASSEMBLER: Starting Pass 2 (Generating Machine Code)...
+> RP2350 ASSEMBLER: Wrote cycle-timing listing to C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\bench\pico2_t2c\verify-timed-short.cycles.txt
+> RP2350 ASSEMBLER: Writing raw binary to C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\bench\pico2_t2c\verify-timed-short.uf2
+[TELEMETRY_START]
+ROM_TOTAL_RP2350|62492|4194304
+CYCLES_TOTAL_RP2350|21163|straight-line, not-taken branches
+REGMAP_RP2350|2962|78|85|385|materialisations seen|already in dest|already in another reg|nearby constant
+SLOTMAP_RP2350|69|frame-slot loads taken from a register
+[TELEMETRY_END]
+pmfc: verify-timed-short.uf2 is named .uf2, so the image is written as a UF2, exactly as an upload packs it: Packed 62492 bytes into 245 blocks -> C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\bench\pico2_t2c\verify-timed-short.uf2
+pmfc: wrote C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\bench\pico2_t2c\verify-timed-short.uf2
+pmfc: uploading verify-timed-short.uf2 (RP2350) through COM6
+> [UF2] verify-timed-short.uf2 is a ready UF2: 245 blocks for the RP2350's Arm cores (Pico 2 / Pico 2 W), family ID 0xE48BFF59, writing 0x10000000 to 0x1000F4FF. It is sent exactly as it is: it is not packed again, and the file is not changed.
+> [NATIVE UPLOADER] A BOOTSEL drive is already present at H:\. It is not the board on COM6 (that board is running a program, so it has no boot drive yet) and is left alone; the program goes only to the drive that appears after COM6 is reset.
+> [NATIVE UPLOADER] Sending BOOTSEL reset command to COM6 (the 1200-baud touch)...
+> [NATIVE UPLOADER] COM6 left the bus after the 1200-baud touch (0.0 s): the board is going to its boot loader.
+> [NATIVE UPLOADER] Waiting for matching BOOTSEL drive: RP2350 (Pico 2)...
+> [NATIVE UPLOADER] The boot drive at I:\ carries the board's serial 3D00D889CF7F499A.
+> [NATIVE UPLOADER] Found BOOTSEL drive at I:\
+> [NATIVE UPLOADER] Writing image: 65536 of 125440 bytes (52%)
+> [NATIVE UPLOADER] Writing image: 125440 of 125440 bytes (100%)
+> [NATIVE UPLOADER] Writing image: 125440 of 125440 bytes (100%)
+> [NATIVE UPLOADER] Wrote verify-timed-short.uf2 to I:\
+> [NATIVE UPLOADER] FLASH COMPLETE! Board will reboot into the new firmware automatically.
+> [NATIVE UPLOADER] Serial monitor: board found on COM6 (USB vendor ID 2E8A), on the same USB connection it was flashed through.
+pmfc: reading COM6 at 9600 baud for 75 s (the port opened 2 ms after the upload, attempt 1).
+8080 verification clk_sys kHz=150000 timing=1 asm_tail=1 memmap=0
+API/interrupt/flag checks=14875 failures=0 PASS
+*** TST8080
+MICROCOSM ASSOCIATES 8080/8085 CPU DIAGNOSTIC
+ VERSION 1.0  (C) 1980
+
+ CPU IS OPERATIONAL
+TST8080 output PASS cycles=4924 reference=4924 count PASS ms=0
+*** 8080PRE
+8080 Preliminary tests complete
+8080PRE output PASS cycles=7817 reference=7817 count PASS ms=0
+*** CPUTEST
+<00><00><00><00><00><00>
+DIAGNOSTICS II V1.2 - CPU TEST
+COPYRIGHT (C) 1981 - SUPERSOFT ASSOCIATES
+
+ABCDEFGHIJKLMNOPQRSTUVWXYZ
+CPU IS 8080/8085
+BEGIN TIMING TEST
+<07><07>END TIMING TEST
+CPU TESTS OK
+
+CPUTEST output PASS cycles=255653383 reference=255653383 count PASS ms=4676
+verification complete failures=0 PASS
+
+pmfc: read COM6 for 75 s: 710 bytes.
+pmfc: OK
+
+Algorithm Hash                                                             Path                                        
+--------- ----                                                             ----                                        
+SHA256    EE03FB06C0C3CEFE9CE79C2E7405AB3CE0C5BDE69F893F7258E897C64BA5D6F0 C:\Users\ajtaj\Desktop\Github\PureBasicCo...
+SHA256    BB8E9DF67B8D60B761D3EA9BC14287B57C14C3EC680EC188D24A00DF6E047E1D C:\Users\ajtaj\Desktop\Github\8080Emulato...
+SHA256    C7B045ED959EFF9CD7E17BEAB8E3D4A7FB8AB89A454DFC7A694CCF47C06F56AF C:\Users\ajtaj\Desktop\Github\8080Emulato...
+
+
+=== JOB -Source bench/verify-timed-memmap-short.pico2w -Output bench/pico2_t2c/verify-timed-memmap-short.uf2 -Port 
+COM6 -Seconds 75
+pmfc: C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\bench\verify-timed-memmap-short.pico2w  ->  RP2350
+> Intrinsics for RP2350: rp2350_hardware.def
+[DEBUG] Attempting to load intrinsics from: C:\Users\ajtaj\Desktop\Github\PureBasicCode\OpenGl Work\ArduinoBasic\RP2350\Intrinsics\rp2350_hardware.def
+> Loaded 12442 register names from rp2350_registers.def
+> Loaded Hardware Intrinsics from rp2350_hardware.def
+pmfc: pin aliases from Boards/Raspberry_Pi_Pico_2_W.board
+> ReserveRegister: 7 reservation(s) on RP2350
+> RESERVE CpuPC -> r4 (.i, 4 bytes, reg 4, span 1) at i8080.pico2 line 33 (included)
+> RESERVE CpuA -> r9 (.i, 4 bytes, reg 9, span 1) at i8080.pico2 line 33 (included)
+> RESERVE Res -> r10 (.i, 4 bytes, reg 10, span 1) at i8080.pico2 line 33 (included)
+> RESERVE Left -> r11 (.i, 4 bytes, reg 11, span 1) at i8080.pico2 line 33 (included)
+> RESERVE CpuHL -> r8 (.i, 4 bytes, reg 8, span 1) at i8080.pico2 line 33 (included)
+> RESERVE FR -> r5 (.i, 4 bytes, reg 5, span 1) at i8080.pico2 line 33 (included)
+> RESERVE TableBase -> r6 (.i, 4 bytes, reg 6, span 1) at i8080.pico2 line 33 (included)
+> F_CPU = 150000000 Hz, from the board's ClockSpeed - delay_ms and the baud divisors follow it.
+> ReserveRegister proof (RP2350): 20628 lines, 87 routines; core 0 reaches 10060 instructions, core 1 0, interrupt handlers 20 - r12 and r4-r7 hold
+pmfc: 20628 lines of assembly
+pmfc: wrote C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\bench\pico2_t2c\verify-timed-memmap-short.uf2.asm
+> RP2350 ASSEMBLER: Starting Pass 1 (Resolving Labels)...
+> RP2350 ASSEMBLER: 18068 bytes of code run from SRAM at $20000000-$20004693, copied from flash at boot; 425880 bytes of SRAM left free, stacks and reserved windows excluded.
+> RP2350 ASSEMBLER: branch relaxation converged in 5 rounds.
+> RP2350 ASSEMBLER: Starting Pass 2 (Generating Machine Code)...
+> RP2350 ASSEMBLER: Wrote cycle-timing listing to C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\bench\pico2_t2c\verify-timed-memmap-short.cycles.txt
+> RP2350 ASSEMBLER: Writing raw binary to C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\bench\pico2_t2c\verify-timed-memmap-short.uf2
+[TELEMETRY_START]
+ROM_TOTAL_RP2350|64888|4194304
+CYCLES_TOTAL_RP2350|22727|straight-line, not-taken branches
+REGMAP_RP2350|3236|80|88|405|materialisations seen|already in dest|already in another reg|nearby constant
+SLOTMAP_RP2350|71|frame-slot loads taken from a register
+[TELEMETRY_END]
+pmfc: verify-timed-memmap-short.uf2 is named .uf2, so the image is written as a UF2, exactly as an upload packs it: Packed 64888 bytes into 254 blocks -> C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\bench\pico2_t2c\verify-timed-memmap-short.uf2
+pmfc: wrote C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\bench\pico2_t2c\verify-timed-memmap-short.uf2
+pmfc: OK
+pmfc: C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\bench\verify-timed-memmap-short.pico2w  ->  RP2350
+> Intrinsics for RP2350: rp2350_hardware.def
+[DEBUG] Attempting to load intrinsics from: C:\Users\ajtaj\Desktop\Github\PureBasicCode\OpenGl Work\ArduinoBasic\RP2350\Intrinsics\rp2350_hardware.def
+> Loaded 12442 register names from rp2350_registers.def
+> Loaded Hardware Intrinsics from rp2350_hardware.def
+pmfc: pin aliases from Boards/Raspberry_Pi_Pico_2_W.board
+> ReserveRegister: 7 reservation(s) on RP2350
+> RESERVE CpuPC -> r4 (.i, 4 bytes, reg 4, span 1) at i8080.pico2 line 33 (included)
+> RESERVE CpuA -> r9 (.i, 4 bytes, reg 9, span 1) at i8080.pico2 line 33 (included)
+> RESERVE Res -> r10 (.i, 4 bytes, reg 10, span 1) at i8080.pico2 line 33 (included)
+> RESERVE Left -> r11 (.i, 4 bytes, reg 11, span 1) at i8080.pico2 line 33 (included)
+> RESERVE CpuHL -> r8 (.i, 4 bytes, reg 8, span 1) at i8080.pico2 line 33 (included)
+> RESERVE FR -> r5 (.i, 4 bytes, reg 5, span 1) at i8080.pico2 line 33 (included)
+> RESERVE TableBase -> r6 (.i, 4 bytes, reg 6, span 1) at i8080.pico2 line 33 (included)
+> F_CPU = 150000000 Hz, from the board's ClockSpeed - delay_ms and the baud divisors follow it.
+> ReserveRegister proof (RP2350): 20628 lines, 87 routines; core 0 reaches 10060 instructions, core 1 0, interrupt handlers 20 - r12 and r4-r7 hold
+pmfc: 20628 lines of assembly
+pmfc: wrote C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\bench\pico2_t2c\verify-timed-memmap-short.uf2.asm
+> RP2350 ASSEMBLER: Starting Pass 1 (Resolving Labels)...
+> RP2350 ASSEMBLER: 18068 bytes of code run from SRAM at $20000000-$20004693, copied from flash at boot; 425880 bytes of SRAM left free, stacks and reserved windows excluded.
+> RP2350 ASSEMBLER: branch relaxation converged in 5 rounds.
+> RP2350 ASSEMBLER: Starting Pass 2 (Generating Machine Code)...
+> RP2350 ASSEMBLER: Wrote cycle-timing listing to C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\bench\pico2_t2c\verify-timed-memmap-short.cycles.txt
+> RP2350 ASSEMBLER: Writing raw binary to C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\bench\pico2_t2c\verify-timed-memmap-short.uf2
+[TELEMETRY_START]
+ROM_TOTAL_RP2350|64888|4194304
+CYCLES_TOTAL_RP2350|22727|straight-line, not-taken branches
+REGMAP_RP2350|3236|80|88|405|materialisations seen|already in dest|already in another reg|nearby constant
+SLOTMAP_RP2350|71|frame-slot loads taken from a register
+[TELEMETRY_END]
+pmfc: verify-timed-memmap-short.uf2 is named .uf2, so the image is written as a UF2, exactly as an upload packs it: Packed 64888 bytes into 254 blocks -> C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\bench\pico2_t2c\verify-timed-memmap-short.uf2
+pmfc: wrote C:\Users\ajtaj\Desktop\Github\8080EmulatorPicoSeries\bench\pico2_t2c\verify-timed-memmap-short.uf2
+pmfc: uploading verify-timed-memmap-short.uf2 (RP2350) through COM6
+> [UF2] verify-timed-memmap-short.uf2 is a ready UF2: 254 blocks for the RP2350's Arm cores (Pico 2 / Pico 2 W), family ID 0xE48BFF59, writing 0x10000000 to 0x1000FDFF. It is sent exactly as it is: it is not packed again, and the file is not changed.
+> [NATIVE UPLOADER] Sending BOOTSEL reset command to COM6 (the 1200-baud touch)...
+> [NATIVE UPLOADER] COM6 left the bus after the 1200-baud touch (0.0 s): the board is going to its boot loader.
+> [NATIVE UPLOADER] Waiting for matching BOOTSEL drive: RP2350 (Pico 2)...
+> [NATIVE UPLOADER] The boot drive at I:\ carries the board's serial 3D00D889CF7F499A.
+> [NATIVE UPLOADER] Found BOOTSEL drive at I:\
+> [NATIVE UPLOADER] Writing image: 65536 of 130048 bytes (50%)
+> [NATIVE UPLOADER] Writing image: 130048 of 130048 bytes (100%)
+> [NATIVE UPLOADER] Writing image: 130048 of 130048 bytes (100%)
+> [NATIVE UPLOADER] Wrote verify-timed-memmap-short.uf2 to I:\
+> [NATIVE UPLOADER] FLASH COMPLETE! Board will reboot into the new firmware automatically.
+> [NATIVE UPLOADER] Serial monitor: board found on COM6 (USB vendor ID 2E8A), on the same USB connection it was flashed through.
+pmfc: reading COM6 at 9600 baud for 75 s (the port opened 2 ms after the upload, attempt 1).
+8080 verification clk_sys kHz=150000 timing=1 asm_tail=1 memmap=1
+API/interrupt/flag checks=14878 failures=0 PASS
+*** TST8080
+MICROCOSM ASSOCIATES 8080/8085 CPU DIAGNOSTIC
+ VERSION 1.0  (C) 1980
+
+ CPU IS OPERATIONAL
+TST8080 output PASS cycles=4924 reference=4924 count PASS ms=0
+*** 8080PRE
+8080 Preliminary tests complete
+8080PRE output PASS cycles=7817 reference=7817 count PASS ms=0
+*** CPUTEST
+<00><00><00><00><00><00>
+DIAGNOSTICS II V1.2 - CPU TEST
+COPYRIGHT (C) 1981 - SUPERSOFT ASSOCIATES
+
+ABCDEFGHIJKLMNOPQRSTUVWXYZ
+CPU IS 8080/8085
+BEGIN TIMING TEST
+<07><07>END TIMING TEST
+CPU TESTS OK
+
+CPUTEST output PASS cycles=255653383 reference=255653383 count PASS ms=4741
+verification complete failures=0 PASS
+
+pmfc: read COM6 for 75 s: 710 bytes.
+pmfc: OK
+
+Algorithm Hash                                                             Path                                        
+--------- ----                                                             ----                                        
+SHA256    EE03FB06C0C3CEFE9CE79C2E7405AB3CE0C5BDE69F893F7258E897C64BA5D6F0 C:\Users\ajtaj\Desktop\Github\PureBasicCo...
+SHA256    E43A9974B2AE7513ACBB93596C9600F92301542A210F2F06F77E62143EC4BE24 C:\Users\ajtaj\Desktop\Github\8080Emulato...
+SHA256    A2275225222DBD636213A61F427990E289F8AB0EDA1BDA8F7D28673EB579EAAF C:\Users\ajtaj\Desktop\Github\8080Emulato...
+
+

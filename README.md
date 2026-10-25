@@ -13,20 +13,21 @@ reachable through the API below.
 Physical boards. Each sample runs exactly 1,000,000 guest instructions with
 cycle accounting off (`#CPU_TIMING = 0`, assembly tail); USB and setup are
 outside the timed interval. Raw logs are in `docs/`. Pico W 2026-10-23;
-Pico 2 W 2026-10-25 with the Thumb-2 handlers (compiler 9777f6cd6).
+Pico 2 W 2026-10-25 with the Thumb-2 handlers and the `ldr pc` tail (signed
+compiler 883c4ae12).
 
 | Mix | Pico W, RP2040 at 200 MHz | Pico 2 W, RP2350 at 150 MHz |
 |---|---:|---:|
-| DCR C / JNZ | 4.88 M instructions/s | **6.00 M** |
-| ADI / XRI / RLC / RAR / ADD / DAA | 4.43 M | **4.43 M** |
-| MOV A,M / STAX D / INX H / INX D / DCR C / JNZ (copy) | 6.70 M | **7.42 M** |
-| CALL / PUSH B / PUSH H / POP H / POP B / RET | 3.79 M | **5.17 M** |
-| Real code: CPUTEST (34.0 M instructions) | 5.94 M | **6.77 M** |
-| Real code: 8080EXM (2.92 G instructions) | 4.56 M | **5.12 M** |
+| DCR C / JNZ | 4.88 M instructions/s | **6.25 M** |
+| ADI / XRI / RLC / RAR / ADD / DAA | 4.43 M | **4.53 M** |
+| MOV A,M / STAX D / INX H / INX D / DCR C / JNZ (copy) | 6.70 M | **7.88 M** |
+| CALL / PUSH B / PUSH H / POP H / POP B / RET | 3.79 M | **5.47 M** |
+| Real code: CPUTEST (34.0 M instructions) | 5.94 M | **7.10 M** |
+| Real code: 8080EXM (2.92 G instructions) | 4.56 M | **5.31 M** |
 
 For scale: 8080EXM averages 8.15 cycles per instruction, so a 2 MHz 8080
 runs it at about 0.245 M instructions/s; the Pico W runs it about 18 times
-faster and the Pico 2 W about 21 times (an 8080 at roughly 42 MHz). These are
+faster and the Pico 2 W about 22 times (an 8080 at roughly 43 MHz). These are
 instruction rates for these mixes, not a guaranteed clock.
 
 **RP2040 tuning:** the first version ran the four mixes at 3.71 / 3.87 / 5.33 /
@@ -48,10 +49,24 @@ from 22.7 KB to 18.8 KB. The Thumb-2 bodies are used only where the
 assembly tail is on, and for handlers that touch guest memory only without
 the page map; every other build keeps the PureMetal bodies (the plain-tail
 build compiles to the same bytes as before). `docs/benchmark-pico2w-thumb2.log`.
-One instruction is still out of reach: `ldr pc, [r6, r2, lsl #2]` (load and
-branch in one) was refused by the compiler's RP2350 assembler although
-ARMv8-M allows it - fixed as forum 1416 (compiler `dc0f6fdce`), not yet in
-the signed compiler; the tail uses `ldr r1` + `bx r1` until it is.
+Last, the tail's `ldr r1` + `bx r1` became one `ldr pc, [r6, r2, lsl #2]`
+(load and branch; the compiler's RP2350 assembler took it from forum 1416,
+signed compiler 883c4ae12): 6.25 / 4.53 / 7.88 / 5.47 M, a further +4 / +2 /
++6 / +6 %, 8080EXM in 549 s, the whole suite passing again in the fast,
+timed and timed-with-page-map builds (`docs/verification-pico2w-ldrpc.log`,
+`docs/benchmark-pico2w-ldrpc.log`). From the first Pico 2 W build that is
++73 / +26 / +41 / +74 %. The Pico W images are byte-identical under this
+compiler, so the RP2040 figures stand.
+
+**A second RP2350 layout, `src/i8080_lib.pico2`:** the fast layout reserves
+both r5 and r6, and the compiler's RP2350 register allocator then has three
+spill registers instead of five; a program that also includes library code
+needing four (the ST7796 driver's `Tft796Fill`) is refused at compile time.
+The library layout is the same core without `TableBase` - the tail loads the
+table's address as a literal - and is what the Space Invaders machine on the
+Pico 2 W uses. It runs the four mixes at 5.77 / 4.43 / 7.07 / 5.00 M
+(`docs/benchmark-pico2w-lib.log`): 2-8 % behind the fast layout, still ahead
+of the Pico W on every mix.
 
 Configuration costs, measured: the plain PureMetal `Goto` tail is about 27%
 slower than the assembly tail on real code (Pico W CPUTEST 7.84 s against
@@ -242,8 +257,9 @@ tone device at OUT $10-$1F: channel c at $10 + 4c: period low, period high
 | `tools/make_test_rom.py` | assembles `machine/invaders_test.rom`: both interrupts counted, the shift register checked, a border and a sprite moved by the controls, a scale on the tone device |
 | `desktop/invaders_cli.exe` | runs a ROM (file, or the compiler's folder of invaders.h/g/f/e) headless: counts, VRAM SHA-256 or checksum, every OUT, RAM bytes, a PNG of the screen |
 | `desktop/i8080desk.exe` | the Screen tab: the machine at integer scale, arrows / Space / 1 / 2 / C, sound through waveOut |
-| `src/invaders.picow` | the Pico W with the LAFVIN ST7796: core 0 runs the machine, core 1 sends the picture by DMA (SPI0 at 100 MHz) and drives the radio; built-in test ROM checked on the board |
+| `src/invaders.picow` | the Pico W with the LAFVIN ST7796: core 0 runs the machine, core 1 draws the picture (RGB565 by DMA, SPI0 at 100 MHz) and drives the radio; built-in test ROM checked on the board |
 | `src/invaders_demo.picow` | the same with the PureMetal demo built in |
+| `src/invaders.pico2w`, `src/invaders_demo.pico2w` | the same two on the Pico 2 W, on the same LAFVIN kit (SPI0 at 75 MHz from clk_sys 150 MHz); no radio in this build |
 
 **Sound on the Pico W** goes to a Bluetooth speaker (A2DP, through the
 compiler's `Shared/Bluetooth` libraries). The speaker's address is private:
@@ -260,6 +276,29 @@ frame for the test ROM and about 3.7 ms for the demo. The demo's music (all
 four voices) and effects play on the Bluetooth speaker with no underruns
 (about 125 packets a second). The desktop sound path is
 checked silently by `desktop/audio_check.exe`.
+
+**Both cores, on both Picos (2026-10-25).** The board is a 60 Hz US machine,
+so the machine and the panel both run at 60 frames a second. Core 0 runs the
+8080 and the machine's sound, and after each frame copies the 7 KB of video
+RAM into a snapshot; core 1 turns the snapshot's bits straight into RGB565
+rows with the cabinet's colour bands and sends them by DMA from two buffers in
+turn (`src/inv_video.pmi`), and drives the radio when there is one. A
+snapshot is taken only when core 1 has finished the last, so no picture is
+torn; `vid_dropped` counts frames that had to wait (none did). Each core's
+share is printed once a second: core 0 is idle only while it waits for the
+next 60 Hz tick, core 1 counts the passes in which it did work.
+
+| Board | ROM | core 0 busy | core 1 busy | machine / panel frames a second | frame 1200 VRAM |
+|---|---|---:|---:|---|---|
+| Pico W (RP2040, 200 MHz) | test ROM | 17% | 74% | 61 / 61 | 264782938, PASS |
+| Pico W | demo | 24% | 76% | 61 / 60-62 | -2054358275 |
+| Pico 2 W (RP2350, 150 MHz) | test ROM | 17% | 78% | 61 / 60 | 264782938, PASS |
+| Pico 2 W | demo | 25% | 79% | 61 / 61 | -2054358275 |
+
+The checksums are the desktop's (`invaders_cli.exe --checksum`). Before the
+split core 0 also built every row of the picture and waited for room in a ring
+to core 1: 91% busy for the demo. Logs: `docs/invaders-picow-cores.log`,
+`docs/invaders-pico2w-cores.log`.
 
 ### The demo
 
