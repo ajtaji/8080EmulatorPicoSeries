@@ -312,13 +312,27 @@ cd 8080EmulatorPicoSeries\desktop
 `i8080desk.pb` finds the engine at `../../Neon-Arcade-Dispay-Engine/` (beside
 this repository). With the engine somewhere else, add
 `/CONSTANT 'GL_ENGINE_DIR$=C:/path/to/Neon-Arcade-Dispay-Engine/'` (forward
-slashes, trailing slash). On the Screen tab, **Machine test ROM** runs the project's test ROM and
-**Open...** loads another one - pick the folder `demo\demo_roms` for the
-PureMetal demo.
+slashes, trailing slash).
 
-Run `desktop\i8080desk.exe` (add `--mute` to start without sound). Keys on the
-Screen tab: arrows move, Space fires, 1 / 2 start, C coin. It takes a `.COM`
-file to load, or `--selftest` (runs the four
+### Running the desktop version
+
+Start `desktop\i8080desk.exe` any way you like - double-click it, or run it
+from the repository or from `desktop\`. With nothing on the command line it
+opens on the **PureMetal demo** (Screen tab). The Screen tab's buttons switch
+between **Machine test ROM** and **PureMetal demo**, and **Open...** loads any
+other ROM (an 8 KB file, or a folder holding invaders.h/g/f/e). A ROM it
+cannot read is reported in an error box and on the status line.
+
+```powershell
+.\desktop\i8080desk.exe                          # the PureMetal demo
+.\desktop\i8080desk.exe C:\path\to\your\invaders # your own ROM folder
+.\desktop\i8080desk.exe --mute                   # no sound
+```
+
+Keys on the Screen tab: arrows move, Space fires, 1 / 2 start, C coin. A
+relative path on the command line is tried from the current folder, the exe's
+folder and the repository. The window also takes a `.COM` file to load, or
+`--selftest` (runs the four
 programs in the window, writes `selftest.log` and `selftest.png`, closes).
 The test programs come from `tools/fetch_tests.py` as for the boards.
 

@@ -29,3 +29,8 @@ firmware/invaders-rom-*.uf2
 /roms/
 # Publishing notes (not part of the project)
 PUBLISH-META.txt
+# The window's own self-test and start-up captures
+desktop/machine-selftest.png
+desktop/machine-selftest.log
+desktop/startup.png
+desktop/startup.log

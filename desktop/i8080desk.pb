@@ -13,6 +13,11 @@
 ; desktop\selftest.log, then close); --machine-selftest (run the Space Invaders
 ; test ROM 150 frames with "right" held for 30 of them - or the ROM and frame
 ; count given after it - save desktop\machine-selftest.png and .log, then close).
+; With no argument (a double-click) it opens on the PureMetal demo. ROMs are
+; found from the exe's folder or the current one, so it does not matter where
+; it is started from; a ROM it cannot read gets an error box.
+; --exit-after <frames>: start as usual, then save startup.png and startup.log
+; (what was loaded) beside the exe and close - a check with no one watching.
 
 CompilerIf Defined(GL_ENGINE_DIR$, #PB_Constant) = 0
   #GL_ENGINE_DIR$ = "../../Neon-Arcade-Dispay-Engine/"   ; the engine cloned beside this repository
@@ -40,7 +45,7 @@ Global SuiteIndex.i = -1, SuiteCycles.q, SuiteStartMs.q
 Global Dim Mn$(255)
 Global Dim OpLen.i(255)
 Global NewList Results$()
-Global Folder$
+Global Folder$, Root$, MachineLoadError$, ExitAfter.i
 Global *ScreenTex.GLSprite, *ScreenBuf, MachineAcc.f, MachineMs.q, MachineSelfTest.i, MachineFramesRun.i, MachineSelfTestFrames.i = 150
 Declare MachineSlice()
 Global ProfMarks$, ProfLast.q
@@ -145,22 +150,55 @@ Procedure RunSlice(ms.i)
   EndIf
 EndProcedure
 
-; The machine test ROM: machine\invaders_test.rom beside Diagnostics.
+; The repository: the first folder, walking up from the exe's folder and then
+; from the current folder, that holds the demo's ROM chips or the machine test
+; ROM. So the window finds them however it is started (double-click, from the
+; repository, from desktop\). "" when there is none.
+Procedure.s RepoRoot()
+  Protected d$, i.i, pass.i
+  For pass = 0 To 1
+    If pass = 0 : d$ = GetPathPart(ProgramFilename()) : Else : d$ = GetCurrentDirectory() : EndIf
+    For i = 0 To 4
+      If FileSize(d$ + "demo\demo_roms\invaders.h") = $800 Or FileSize(d$ + "machine\invaders_test.rom") > 0
+        ProcedureReturn d$
+      EndIf
+      If Len(d$) <= 3 : Break : EndIf
+      d$ = GetPathPart(Left(d$, Len(d$) - 1))
+    Next
+  Next
+  ProcedureReturn ""
+EndProcedure
+
 Procedure.s MachineTestRom()
-  Protected d$ = Left(Folder$, Len(Folder$) - 1)       ; ...\Diagnostics\upstream
-  d$ = GetPathPart(d$)                                 ; ...\Diagnostics\
-  d$ = GetPathPart(Left(d$, Len(d$) - 1))              ; the repository
-  ProcedureReturn d$ + "machine\invaders_test.rom"
+  ProcedureReturn Root$ + "machine\invaders_test.rom"
+EndProcedure
+
+Procedure.s DemoRom()
+  ProcedureReturn Root$ + "demo\demo_roms"
+EndProcedure
+
+; A ROM or program named on the command line: as given (from the current
+; folder), else from the exe's folder, else from the repository.
+Procedure.s ResolvePath(p$)
+  Protected q$ = RTrim(p$, "\")
+  If FileSize(q$) <> -1 Or q$ = "" : ProcedureReturn q$ : EndIf
+  If FileSize(GetPathPart(ProgramFilename()) + q$) <> -1 : ProcedureReturn GetPathPart(ProgramFilename()) + q$ : EndIf
+  If Root$ <> "" And FileSize(Root$ + q$) <> -1 : ProcedureReturn Root$ + q$ : EndIf
+  ProcedureReturn q$
 EndProcedure
 
 Procedure LoadMachine(path$, name$)
   If InvLoadRom(path$)
     LoadedName$ = name$ : RunCycles = 0 : SuiteIndex = -1 : RightTab = 0
     MachineAcc = 0 : MachineMs = ElapsedMilliseconds() : MachineFramesRun = 0
-    Running = #True
+    Running = #True : MachineLoadError$ = ""
     Status$ = "Space Invaders hardware: " + name$ + " - arrows move, Space fires, 1/2 start, C coin"
   Else
-    Status$ = "Cannot read the ROM " + path$ + " (one file up to 8 KB, or a folder with invaders.h/g/f/e)"
+    MachineLoadError$ = "Cannot read the ROM " + path$ + " (one file up to 8 KB, or a folder with invaders.h/g/f/e)"
+    Status$ = MachineLoadError$
+    If MachineSelfTest = 0 And ExitAfter = 0
+      MessageRequester("Intel 8080", MachineLoadError$, #PB_MessageRequester_Error)
+    EndIf
   EndIf
 EndProcedure
 
@@ -404,7 +442,10 @@ Procedure ScreenPane(x.f, y.f, w.f, h.f)
   If Neon_Button(x + 10 * s, y + 6 * s, 150 * s, 28 * s, "Machine test ROM", Bool(InvLoaded$ = MachineTestRom() And Machine = #MACHINE_INVADERS))
     LoadMachine(MachineTestRom(), "invaders_test.rom")
   EndIf
-  Neon_Text(*Neon_FontSmall, x + 172 * s, y + 12 * s, "Space Invaders (Taito 8080) hardware. Open... loads a ROM: 8 KB, or a folder of invaders.h/g/f/e",
+  If Neon_Button(x + 168 * s, y + 6 * s, 150 * s, 28 * s, "PureMetal demo", Bool(InvLoaded$ = DemoRom() And Machine = #MACHINE_INVADERS))
+    LoadMachine(DemoRom(), "PureMetal demo")
+  EndIf
+  Neon_Text(*Neon_FontSmall, x + 330 * s, y + 12 * s, "Space Invaders (Taito 8080) hardware. Open... loads a ROM: 8 KB, or a folder of invaders.h/g/f/e",
             Neon_C_DimR, Neon_C_DimG, Neon_C_DimB)
   If Machine <> #MACHINE_INVADERS
     Neon_Text(*Neon_FontUI, x + 14 * s, y + 60 * s, "No machine ROM loaded.", Neon_C_FaintR, Neon_C_FaintG, Neon_C_FaintB)
@@ -522,11 +563,17 @@ EndProcedure
 
 ; ---------------------------------------------------------------- main
 Procedure Main()
-  Protected ev.i, now.q, dt.f, arg$ = ProgramParameter(0), lib.i, fn.i, w.i = 1400, h.i = 880, down.b, log.i, k.i, mute.i
+  Protected ev.i, now.q, dt.f, arg$, lib.i, fn.i, w.i = 1400, h.i = 880, down.b, log.i, k.i, mute.i
+  ; --mute and --exit-after <frames> may stand anywhere; the first other word is what to load.
   For k = 0 To CountProgramParameters() - 1
-    If LCase(ProgramParameter(k)) = "--mute" : mute = #True : EndIf
+    If LCase(ProgramParameter(k)) = "--mute"
+      mute = #True
+    ElseIf LCase(ProgramParameter(k)) = "--exit-after"
+      k + 1 : ExitAfter = Val(ProgramParameter(k))
+    ElseIf arg$ = ""
+      arg$ = ProgramParameter(k)
+    EndIf
   Next
-  If LCase(arg$) = "--mute" : arg$ = ProgramParameter(1) : EndIf
   ; Per-monitor DPI awareness before any window exists.
   lib = OpenLibrary(#PB_Any, "user32.dll")
   If lib
@@ -537,7 +584,11 @@ Procedure Main()
   ProfMark("dpi")
   CpmInitTests()
   InitDisasm()
+  Root$ = RepoRoot()
   Folder$ = CpmTestFolder()
+  If FileSize(Folder$ + CpmTests(0)\File$) <= 0 And Root$ <> ""
+    Folder$ = Root$ + "Diagnostics\upstream\"      ; where tools/fetch_tests.py puts them
+  EndIf
   ProfMark("tables")
   ExamineDesktops()
   If w > DesktopWidth(0) * 0.9 : w = DesktopWidth(0) * 0.9 : EndIf
@@ -564,22 +615,30 @@ Procedure Main()
   ElseIf LCase(arg$) = "--machine-selftest"
     ; optionally: a ROM (file or folder) and how many frames to run first
     MachineSelfTest = #True
-    If ProgramParameter(1) <> ""
-      LoadMachine(ProgramParameter(1), GetFilePart(RTrim(ProgramParameter(1), "\")))
+    If ProgramParameter(1) <> "" And LCase(ProgramParameter(1)) <> "--mute"
+      LoadMachine(ResolvePath(ProgramParameter(1)), GetFilePart(RTrim(ProgramParameter(1), "\")))
       If Val(ProgramParameter(2)) > 0 : MachineSelfTestFrames = Val(ProgramParameter(2)) : EndIf
     Else
       LoadMachine(MachineTestRom(), "invaders_test.rom")
     EndIf
+    If MachineLoadError$ <> ""
+      ; No window left waiting: say so in the log and the exit code.
+      log = CreateFile(#PB_Any, GetPathPart(ProgramFilename()) + "machine-selftest.log")
+      If log : WriteStringN(log, "FAIL " + MachineLoadError$) : CloseFile(log) : EndIf
+      End 1
+    EndIf
   ElseIf arg$ <> ""
     If mute = 0 : AudioOpen() : EndIf
+    arg$ = ResolvePath(arg$)
     If LCase(GetExtensionPart(arg$)) = "com"
       LoadProgram(arg$, GetFilePart(arg$)) : RightTab = 1
     Else
       LoadMachine(arg$, GetFilePart(arg$))
     EndIf
   Else
+    ; No argument (a double-click): the PureMetal demo on the Screen tab.
     If mute = 0 : AudioOpen() : EndIf
-    LoadProgram(Folder$ + CpmTests(0)\File$, CpmTests(0)\Name$)
+    LoadMachine(DemoRom(), "PureMetal demo")
   EndIf
   ProfMark("loaded")
   LastMs = ElapsedMilliseconds()
@@ -628,6 +687,7 @@ Procedure Main()
       SaveScreenshot(GetPathPart(ProgramFilename()) + "machine-selftest.png")
       log = CreateFile(#PB_Any, GetPathPart(ProgramFilename()) + "machine-selftest.log")
       If log
+        WriteStringN(log, "rom=" + InvLoaded$)
         WriteStringN(log, "frames=" + Str(InvFrames) + " RST1=" + Str(M($2000)) + " RST2=" + Str(M($2001)) + " frame=" + Str(M($2002)) +
                           " sprite=" + Str(M($2003)) + " shift=" + Str(M($2010)) + "," + Str(M($2011)) + "," + Str(M($2012)) + "," + Str(M($2013)) +
                           " tone0 period=" + Str(InvTones(0)\Period) + " volume=" + Str(InvTones(0)\Volume))
@@ -641,6 +701,19 @@ Procedure Main()
       log = CreateFile(#PB_Any, GetPathPart(ProgramFilename()) + "selftest.log")
       If log
         ForEach Results$() : WriteStringN(log, Results$()) : Next
+        CloseFile(log)
+      EndIf
+      Quit = #True
+    EndIf
+    If ExitAfter > 0 And ProfFrames >= ExitAfter
+      ; --exit-after: what this start loaded, for a check with no one watching
+      SaveScreenshot(GetPathPart(ProgramFilename()) + "startup.png")
+      log = CreateFile(#PB_Any, GetPathPart(ProgramFilename()) + "startup.log")
+      If log
+        WriteStringN(log, "cwd=" + GetCurrentDirectory())
+        WriteStringN(log, "root=" + Root$)
+        WriteStringN(log, "loaded=" + LoadedName$ + " rom=" + InvLoaded$ + " machine_frames=" + Str(InvFrames))
+        WriteStringN(log, "status=" + Status$)
         CloseFile(log)
       EndIf
       Quit = #True
