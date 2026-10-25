@@ -1,9 +1,11 @@
 ; Intel 8080 on the desktop - the core, a CP/M test machine and a debugger,
 ; drawn with the Neon Arcade Display Engine.
 ;
-; Build (PowerShell, x64):
-;   & 'C:\Program Files\PureBasic\Compilers\pbcompilerc.exe' i8080desk.pb /THREAD /DPIAWARE /OPTIMIZER `
-;       /CONSTANT GL_ENGINE_DIR$=C:/Users/ajtaj/Desktop/Neon-Arcade-Dispay-Engine/ /EXE i8080desk.exe
+; Build (PowerShell, x64), with the Neon Arcade Display Engine
+; (https://github.com/ajtaji/Neon-Arcade-Dispay-Engine) cloned beside this
+; repository:
+;   & 'C:\Program Files\PureBasic\Compilers\pbcompilerc.exe' i8080desk.pb /THREAD /DPIAWARE /OPTIMIZER /EXE i8080desk.exe
+; The engine elsewhere: add /CONSTANT GL_ENGINE_DIR$=<its folder>/ (with the trailing slash).
 ;
 ; Command line: a .COM file or a machine ROM to load (add --mute for no sound,
 ; anywhere on the line); --selftest (run the four
@@ -13,7 +15,7 @@
 ; count given after it - save desktop\machine-selftest.png and .log, then close).
 
 CompilerIf Defined(GL_ENGINE_DIR$, #PB_Constant) = 0
-  #GL_ENGINE_DIR$ = "C:/Users/ajtaj/Desktop/Neon-Arcade-Dispay-Engine/"
+  #GL_ENGINE_DIR$ = "../../Neon-Arcade-Dispay-Engine/"   ; the engine cloned beside this repository
 CompilerEndIf
 #CPU_DISPATCH = 0          ; computed goto: measured fastest on the PC
 XIncludeFile "machine.pbi"
