@@ -10,27 +10,48 @@ reachable through the API below.
 
 ## Measured speed
 
-Physical boards, 2026-10-23. Each sample runs exactly 1,000,000 guest
-instructions with cycle accounting off (`#CPU_TIMING = 0`, assembly tail);
-USB and setup are outside the timed interval. Raw logs are in `docs/`.
+Physical boards. Each sample runs exactly 1,000,000 guest instructions with
+cycle accounting off (`#CPU_TIMING = 0`, assembly tail); USB and setup are
+outside the timed interval. Raw logs are in `docs/`. Pico W 2026-10-23;
+Pico 2 W 2026-10-25 with the Thumb-2 handlers (compiler 9777f6cd6).
 
 | Mix | Pico W, RP2040 at 200 MHz | Pico 2 W, RP2350 at 150 MHz |
 |---|---:|---:|
-| DCR C / JNZ | **4.88 M instructions/s** | 3.62 M instructions/s |
-| ADI / XRI / RLC / RAR / ADD / DAA | **4.43 M** | 3.58 M |
-| MOV A,M / STAX D / INX H / INX D / DCR C / JNZ (copy) | **6.70 M** | 5.59 M |
-| CALL / PUSH B / PUSH H / POP H / POP B / RET | **3.79 M** | 3.15 M |
-| Real code: CPUTEST (34.0 M instructions) | 5.94 M | 4.67 M |
-| Real code: 8080EXM (2.92 G instructions) | 4.56 M | 3.80 M |
+| DCR C / JNZ | 4.88 M instructions/s | **6.00 M** |
+| ADI / XRI / RLC / RAR / ADD / DAA | 4.43 M | **4.43 M** |
+| MOV A,M / STAX D / INX H / INX D / DCR C / JNZ (copy) | 6.70 M | **7.42 M** |
+| CALL / PUSH B / PUSH H / POP H / POP B / RET | 3.79 M | **5.17 M** |
+| Real code: CPUTEST (34.0 M instructions) | 5.94 M | **6.77 M** |
+| Real code: 8080EXM (2.92 G instructions) | 4.56 M | **5.12 M** |
 
 For scale: 8080EXM averages 8.15 cycles per instruction, so a 2 MHz 8080
 runs it at about 0.245 M instructions/s; the Pico W runs it about 18 times
-faster (an 8080 at roughly 37 MHz). These are instruction rates for these
-mixes, not a guaranteed clock. The RP2040 figures are after tuning: the first version ran
-the four mixes at 3.71 / 3.87 / 5.33 / 3.31 M (`docs/benchmark-baseline.log`);
-`docs/benchmark-layouts.log` has the six register layouts measured on the
-way. The Pico 2 W runs the same generated handlers with the RP2350 layout of
-the PureMetal 6502 core and was not tuned separately.
+faster and the Pico 2 W about 21 times (an 8080 at roughly 42 MHz). These are
+instruction rates for these mixes, not a guaranteed clock.
+
+**RP2040 tuning:** the first version ran the four mixes at 3.71 / 3.87 / 5.33 /
+3.31 M (`docs/benchmark-baseline.log`); `docs/benchmark-layouts.log` has the
+six register layouts measured on the way. The RP2040 is Thumb-1 (Cortex-M0+).
+
+**RP2350 tuning (Thumb-2, 2026-10-25):** the Pico 2 W first ran the same
+handlers as the Pico W through a 7-instruction tail: 3.62 / 3.58 / 5.59 /
+3.15 M, 8080EXM in 769 s. The tail now loads the handler's address with one
+scaled `ldr` (3.71 / 3.65 / 5.80 / 3.22 M on its own), and the hot handler
+families - MOV, the ALU (register, memory, immediate), INR/DCR, INX/DCX, MVI,
+LXI, DAD, LDAX/STAX, the jumps, calls and returns with their conditions,
+PUSH/POP and RST - are hand-written Cortex-M33 code (`tools/t2_handlers.py`:
+`ubfx`/`bfi` for the register halves, an unaligned `ldrh` for 16-bit
+operands, no stack spills). The compiled handlers spilled to the stack
+constantly (DCR C was 25 instructions, now 9). Result: 6.00 / 4.43 / 7.42 /
+5.17 M, +66 / +24 / +33 / +64 %, 8080EXM in 570 s; the handler code shrank
+from 22.7 KB to 18.8 KB. The Thumb-2 bodies are used only where the
+assembly tail is on, and for handlers that touch guest memory only without
+the page map; every other build keeps the PureMetal bodies (the plain-tail
+build compiles to the same bytes as before). `docs/benchmark-pico2w-thumb2.log`.
+One instruction is still out of reach: `ldr pc, [r6, r2, lsl #2]` (load and
+branch in one) was refused by the compiler's RP2350 assembler although
+ARMv8-M allows it - fixed as forum 1416 (compiler `dc0f6fdce`), not yet in
+the signed compiler; the tail uses `ldr r1` + `bx r1` until it is.
 
 Configuration costs, measured: the plain PureMetal `Goto` tail is about 27%
 slower than the assembly tail on real code (Pico W CPUTEST 7.84 s against
@@ -38,8 +59,8 @@ slower than the assembly tail on real code (Pico W CPUTEST 7.84 s against
 50% on the memory-heavy 8080EXM (Pico 2 W: 1,160 s against 769 s), since
 every data access becomes a procedure call; timing costs nothing measurable.
 
-The demo uses 37 KB of flash; 21.5 KB of its code runs from SRAM. Guest
-memory is 64 KiB, the dispatch table 1 KiB.
+The Pico W demo uses 37 KB of flash, 21.5 KB of its code running from SRAM
+(the Pico 2 W's: 18.8 KB). Guest memory is 64 KiB, the dispatch table 1 KiB.
 
 
 ## Files
@@ -173,6 +194,14 @@ and INR M through both traps.
 | timed + page map, assembly tail | - | all four programs, cycle counts exact (8080EXM 1,160 s); all checks |
 | untimed + page map, assembly tail | all checks; TST8080, 8080PRE, CPUTEST exact | - |
 | timed, plain PureMetal `Goto` tail | all checks; TST8080, 8080PRE, CPUTEST, cycle counts exact | all four programs, cycle counts exact (8080EXM 943 s); all checks |
+
+**Again on the Pico 2 W with the Thumb-2 handlers (2026-10-25):** the fast
+build - all 8,731 checks, all four programs with exact instruction counts
+(8080EXM 570 s); the timed build - all 14,875 checks, all four programs with
+exact cycle counts (8080EXM 568.5 s); timed + page map - all 14,878 checks,
+TST8080, 8080PRE and CPUTEST cycle-exact. The plain-tail build compiles to
+the same bytes as the one proven above, and the Pico W's images are
+unchanged (`docs/verification-pico2w-*-thumb2.log`).
 
 The Pico W's lease on the shared bench is limited to 15 minutes, so the
 8080EXM runs of its page-map and plain-tail builds were done on the Pico 2 W,

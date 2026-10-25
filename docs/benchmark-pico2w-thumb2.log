@@ -1,0 +1,17 @@
+# RP2350 Thumb-2 dispatch and handlers, Pico 2 W at 150 MHz, compiler 9777f6cd6, 1,000,000 instructions per sample, untimed (2026-10-25)
+# base = the October layout (7-instruction tail, PureMetal handlers); pico2_t2a = scaled-ldr tail only; pico2_t2c = that tail + Thumb-2 hot handlers (chosen)
+﻿=== JOB -Source bench/t2/demo.pico2w -Output bench/t2/base.uf2 -Port COM6 -Seconds 10
+register/branch DCR/JNZ instructions=1000000 us=276353 instructions/s=3618560
+arithmetic ADI/XRI/RLC/RAR/ADD/DAA instructions=1000000 us=279049 instructions/s=3583600
+memory copy MOV/STAX/INX/DCR/JNZ instructions=1000000 us=179040 instructions/s=5585344
+call/stack CALL/PUSH/POP/RET instructions=1000000 us=317143 instructions/s=3153151
+=== JOB -Source bench/pico2_t2a/demo.pico2w -Output bench/pico2_t2a/demo.uf2 -Port COM6 -Seconds 10
+register/branch DCR/JNZ instructions=1000000 us=269686 instructions/s=3708015
+arithmetic ADI/XRI/RLC/RAR/ADD/DAA instructions=1000000 us=274286 instructions/s=3645829
+memory copy MOV/STAX/INX/DCR/JNZ instructions=1000000 us=172373 instructions/s=5801372
+call/stack CALL/PUSH/POP/RET instructions=1000000 us=310477 instructions/s=3220850
+=== JOB -Source bench/pico2_t2c/demo.pico2w -Output bench/pico2_t2c/demo.uf2 -Port COM6 -Seconds 10
+register/branch DCR/JNZ instructions=1000000 us=166541 instructions/s=6004527
+arithmetic ADI/XRI/RLC/RAR/ADD/DAA instructions=1000000 us=225715 instructions/s=4430365
+memory copy MOV/STAX/INX/DCR/JNZ instructions=1000000 us=134758 instructions/s=7420709
+call/stack CALL/PUSH/POP/RET instructions=1000000 us=193333 instructions/s=5172422

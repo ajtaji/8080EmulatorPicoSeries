@@ -8,6 +8,7 @@ The generated files are checked in; edit this generator, then regenerate:
 Writes src/i8080.pico (RP2040) and src/i8080.pico2 (RP2350 Arm).
 """
 from pathlib import Path
+import t2_handlers
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -160,7 +161,47 @@ LAYOUT = {
       {br} __ul_cpurun_done
     EndASM''',
     ),
+    # RP2350 measurement variants (py -3 tools/generate.py --rp2350 <name>): Thumb-2 tails.
+    'pico2_t2a': dict(
+        reserve='ReserveRegister CpuPC = r4, CpuA = r9, Res = r10, Left = r11, CpuHL = r8, FR = r5, TableBase = r6',
+        table_global='Global TableBase.i\n',
+        table_init='    TableBase = @Dispatch(0)\n',
+        dispatch='''    ASM Uses CpuPC, TableBase
+      ldr r1, =global_m
+      ldrb r2, [r1, r4]
+      adds r4, #1
+      uxth r4, r4
+      ldr r1, [r6, r2, lsl #2]
+      bx r1
+    EndASM''',
+        charge='''    ASM Uses Left
+      subs.w r11, r11, #{c}
+      {br} __ul_cpurun_done
+    EndASM''',
+    ),
+    # RP2350: the layout measured fastest (docs/benchmark-pico2w-thumb2.log): the
+    # tail loads the handler with a scaled ldr, and the hot handlers are Thumb-2
+    # (tools/t2_handlers.py).
     'pico2': dict(
+        reserve='ReserveRegister CpuPC = r4, CpuA = r9, Res = r10, Left = r11, CpuHL = r8, FR = r5, TableBase = r6',
+        table_global='Global TableBase.i\n',
+        table_init='    TableBase = @Dispatch(0)\n',
+        dispatch='''    ASM Uses CpuPC, TableBase
+      ldr r1, =global_m
+      ldrb r2, [r1, r4]
+      adds r4, #1
+      uxth r4, r4
+      ldr r1, [r6, r2, lsl #2]
+      bx r1
+    EndASM''',
+        charge='''    ASM Uses Left
+      subs.w r11, r11, #{c}
+      {br} __ul_cpurun_done
+    EndASM''',
+        t2=True,
+    ),
+    # The first RP2350 layout (Thumb-1 shapes), kept for comparison.
+    'pico2_first': dict(
         reserve='ReserveRegister CpuPC = r4, CpuA = r9, Res = r10, Left = r11, CpuHL = r8, FR = r5, TableBase = r6',
         table_global='Global TableBase.i\n',
         table_init='    TableBase = @Dispatch(0)\n',
@@ -172,6 +213,21 @@ LAYOUT = {
       lsls r2, r2, #2
       ldr r1, [r6, r2]
       bx r1
+    EndASM''',
+        charge='''    ASM Uses Left
+      subs.w r11, r11, #{c}
+      {br} __ul_cpurun_done
+    EndASM''',
+    ),
+    'pico2_t2b': dict(
+        reserve='ReserveRegister CpuPC = r4, CpuA = r9, Res = r10, Left = r11, CpuHL = r8, FR = r5, TableBase = r6, MemBase = r12',
+        table_global='Global TableBase.i, MemBase.i\n',
+        table_init='    TableBase = @Dispatch(0)\n    MemBase = @M(0)\n',
+        dispatch='''    ASM Uses CpuPC, TableBase, MemBase
+      ldrb r2, [r12, r4]
+      adds r4, #1
+      uxth r4, r4
+      ldr pc, [r6, r2, lsl #2]
     EndASM''',
         charge='''    ASM Uses Left
       subs.w r11, r11, #{c}
@@ -596,7 +652,11 @@ def generate(target):
         name, lines, tail = body(op)
         c = CYC[op]
         out.append(f'Op{op:02X}: ; ${op:02X} {name}, {c} cycles')
-        out += ['  ' + s for s in lines]
+        t2 = t2_handlers.body(op) if L.get('t2') and tail == 'next' else None
+        if t2:
+            out += ['  ' + s for s in t2_wrap(lines, *t2)]
+        else:
+            out += ['  ' + s for s in lines]
         if tail == 'next':
             out += ['  ' + s for s in next_op(L, c)]
         elif tail == 'io':
@@ -616,6 +676,24 @@ def generate(target):
     text = '\n'.join(out) + '\n'
     assert '{' not in text, 'unformatted template field'
     return text
+
+
+def t2_wrap(pm_lines, asm_lines, memory, timed_lines):
+    """The Thumb-2 body where it applies (assembly tail on; page map off when
+    the handler touches guest memory), the PureMetal body everywhere else."""
+    def asm(lines):
+        return [t2_handlers.uses(lines)] + ['  ' + a if not a.endswith(':') else a for a in lines] + ['EndASM']
+    if timed_lines:
+        fast = ['CompilerIf #CPU_TIMING = 1'] + ['  ' + a for a in asm(timed_lines)] + ['CompilerElse'] + \
+               ['  ' + a for a in asm(asm_lines)] + ['CompilerEndIf']
+    else:
+        fast = asm(asm_lines)
+    slow = list(pm_lines)
+    if memory:
+        fast = ['CompilerIf #CPU_MEMMAP = 0'] + ['  ' + a for a in fast] + ['CompilerElse'] + \
+               ['  ' + a for a in slow] + ['CompilerEndIf']
+    return ['CompilerIf #CPU_ASM_TAIL = 1'] + ['  ' + a for a in fast] + ['CompilerElse'] + \
+           ['  ' + a for a in slow] + ['CompilerEndIf']
 
 
 def next_op(L, c):
@@ -643,9 +721,10 @@ def tail_macros(L):
 if __name__ == '__main__':
     import argparse
     ap = argparse.ArgumentParser()
-    ap.add_argument('--rp2040', default='pico', choices=[k for k in LAYOUT if k.startswith('pico') and k != 'pico2'])
+    ap.add_argument('--rp2040', default='pico', choices=[k for k in LAYOUT if k.startswith('pico') and not k.startswith('pico2')])
+    ap.add_argument('--rp2350', default='pico2', choices=[k for k in LAYOUT if k.startswith('pico2')])
     args = ap.parse_args()
-    for target, name in ((args.rp2040, 'i8080.pico'), ('pico2', 'i8080.pico2')):
+    for target, name in ((args.rp2040, 'i8080.pico'), (args.rp2350, 'i8080.pico2')):
         text = generate(target)
         (ROOT / 'src' / name).write_text(text, encoding='utf-8')
         print(f'{name}: {text.count(chr(10))} lines')
