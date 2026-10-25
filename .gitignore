@@ -21,3 +21,11 @@ demo/demo.bin
 demo/*.slots.txt
 demo/demo.build.log
 demo/demo.stderr.log
+# Your own machine ROM and the images built from it (tools/embed_rom.py; never committed)
+src/inv_rom_user.pmi
+firmware/invaders-rom-*.uf2
+*.rom.uf2
+# ROM chips or dumps other than this project's own
+/roms/
+# Publishing notes (not part of the project)
+PUBLISH-META.txt

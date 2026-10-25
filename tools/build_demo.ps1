@@ -1,11 +1,17 @@
 param(
-    [string]$Compiler = 'C:\Users\ajtaj\Desktop\Github\PureBasicCode\OpenGl Work\ArduinoBasic\PureMetalForge.exe',
+    # PureMetal Forge: -Compiler, else $env:PUREMETAL_FORGE, else PureMetalForge.exe on the PATH.
+    [string]$Compiler = $(if ($env:PUREMETAL_FORGE) { $env:PUREMETAL_FORGE } else { 'PureMetalForge.exe' }),
     [int]$Frames = 1200
 )
 # Builds demo\demo.invaders for the Space Invaders board (the compiler writes
 # demo\demo_roms\invaders.h/g/f/e) and runs it headless for $Frames frames
 # with desktop\invaders_cli.exe, printing the counts and the frames it missed.
 $ErrorActionPreference = 'Stop'
+if (!(Test-Path -LiteralPath $Compiler)) {
+    $found = Get-Command $Compiler -ErrorAction SilentlyContinue
+    if (!$found) { throw "PureMetal Forge not found ('$Compiler'): pass -Compiler or set PUREMETAL_FORGE." }
+    $Compiler = $found.Source
+}
 $root = Split-Path $PSScriptRoot -Parent
 $src = Join-Path $root 'demo\demo.invaders'
 $hex = Join-Path $root 'demo\demo.hex'

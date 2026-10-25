@@ -4,18 +4,24 @@ param(
     [int]$Minutes = 5,
     [string]$Owner = '8080-core'
 )
-# Holds the shared board's lease across several uploads: each line of the
-# jobs file is the arguments for tools/build.ps1 (with -Port).
+# Runs several uploads in a row on one board: each line of the jobs file is
+# the arguments for tools/build.ps1 (with -Port). On a shared bench the
+# board's lease ($env:BOARD_LEASE_SCRIPT, default
+# C:\PMFBuild\board-leases\lease.ps1) is held across all of them.
 $ErrorActionPreference = 'Stop'
-. 'C:\PMFBuild\board-leases\lease.ps1'
+$leaseScript = $(if ($env:BOARD_LEASE_SCRIPT) { $env:BOARD_LEASE_SCRIPT } else { 'C:\PMFBuild\board-leases\lease.ps1' })
 $build = Join-Path $PSScriptRoot 'build.ps1'
 $lines = Get-Content $Jobs | Where-Object { $_.Trim() -ne '' }
-$lease = Get-BoardLease -Port $Port -Owner $Owner -Minutes $Minutes
+$lease = $null
+if (Test-Path -LiteralPath $leaseScript) {
+    . $leaseScript
+    $lease = Get-BoardLease -Port $Port -Owner $Owner -Minutes $Minutes
+}
 try {
     foreach ($line in $lines) {
         Write-Host "=== JOB $line"
         Invoke-Expression "& '$build' -NoLease $line"
     }
 } finally {
-    Release-BoardLease $lease
+    if ($lease) { Release-BoardLease $lease }
 }

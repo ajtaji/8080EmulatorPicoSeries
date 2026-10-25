@@ -1,7 +1,8 @@
-﻿; Everything the Space Invaders machine needs on the Pico 2 W (RP2350), on the
+; Everything the Space Invaders machine needs on the Pico 2 W (RP2350), on the
 ; same LAFVIN ST7796 kit as the Pico W. The program that includes this sets
 ; #INV_TEST (1: the built-in ROM is the machine test ROM, checked on the
-; board; 0: the PureMetal demo, demo/demo.invaders), then calls InvMain().
+; board; 0: the PureMetal demo, demo/demo.invaders; 2: your own ROM, embedded
+; into src/inv_rom_user.pmi by tools/embed_rom.py), then calls InvMain().
 ; No radio here: the machine fills its sound ring and nothing plays it.
 ; Core 1 is the second Cortex-M33 running this same image (multicore_smp).
 #CLOCK_KHZ = 150000
@@ -28,6 +29,8 @@ XIncludeFile "inv_video.pmi"
 XIncludeFile "inv_audio_null.pmi"
 CompilerIf #INV_TEST = 1
   XIncludeFile "inv_rom_test.pmi"
+CompilerElseIf #INV_TEST = 2
+  XIncludeFile "inv_rom_user.pmi"   ; your own ROM: tools/embed_rom.py, not in git
 CompilerElse
   XIncludeFile "inv_rom_demo.pmi"
 CompilerEndIf

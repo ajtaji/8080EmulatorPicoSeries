@@ -1,5 +1,6 @@
 param(
-    [string]$Compiler = 'C:\Users\ajtaj\Desktop\Github\PureBasicCode\OpenGl Work\ArduinoBasic\PureMetalForge.exe',
+    # PureMetal Forge: -Compiler, else $env:PUREMETAL_FORGE, else PureMetalForge.exe on the PATH.
+    [string]$Compiler = $(if ($env:PUREMETAL_FORGE) { $env:PUREMETAL_FORGE } else { 'PureMetalForge.exe' }),
     [string]$Source = 'src/demo.picow',
     [string]$Output = 'firmware/8080-picow.uf2',
     [string]$Port = '',
@@ -9,9 +10,17 @@ param(
     [switch]$NoLease
 )
 # Compiles; with -Port also uploads and captures the board's serial output.
-# A board shared between several workers is taken with the bench's lease
-# (C:\PMFBuild\board-leases\lease.ps1) for exactly the upload and capture.
+# On a bench where several people share boards, a lease script
+# ($env:BOARD_LEASE_SCRIPT, default C:\PMFBuild\board-leases\lease.ps1) is
+# used for exactly the upload and capture when it exists; without one the
+# board is simply used.
 $ErrorActionPreference = 'Stop'
+if (!(Test-Path -LiteralPath $Compiler)) {
+    $found = Get-Command $Compiler -ErrorAction SilentlyContinue
+    if (!$found) { throw "PureMetal Forge not found ('$Compiler'): pass -Compiler or set PUREMETAL_FORGE." }
+    $Compiler = $found.Source
+}
+$leaseScript = $(if ($env:BOARD_LEASE_SCRIPT) { $env:BOARD_LEASE_SCRIPT } else { 'C:\PMFBuild\board-leases\lease.ps1' })
 $projectRoot = Split-Path $PSScriptRoot -Parent
 # Relative paths are from the repository; absolute ones (a private wrapper
 # outside git, and its image) are taken as they are.
@@ -31,7 +40,8 @@ function Invoke-Forge([string]$arguments) {
 # Compile alone first: a source that does not build never takes the board.
 Invoke-Forge ('--compile "' + $sourcePath + '" -S -o "' + $outputPath + '"')
 
-# The NES ROM store starts at flash $10050000 on the shared Pico W.
+# Keep the image below flash $10050000: the bench's boards keep other data
+# (an NES ROM store) from there up, and these images need far less.
 $uf2 = [IO.File]::ReadAllBytes($outputPath); $imageEnd = 0
 for ($o = 0; $o -lt $uf2.Length; $o += 512) {
     $blockEnd = [BitConverter]::ToUInt32($uf2, $o + 12) + [BitConverter]::ToUInt32($uf2, $o + 16)
@@ -39,12 +49,12 @@ for ($o = 0; $o -lt $uf2.Length; $o += 512) {
 }
 if ($imageEnd -gt 0x10050000) { throw ('Image reaches 0x{0:X8}, past the NES ROM store at 0x10050000; refusing to upload.' -f $imageEnd) }
 
-if ($Port -and $NoLease) {
-    # The caller (tools/board.ps1) holds the board's lease.
+if ($Port -and ($NoLease -or !(Test-Path -LiteralPath $leaseScript))) {
+    # The caller (tools/board.ps1) holds the board's lease, or there is no lease to take.
     Invoke-Forge ('--compile "' + $sourcePath + '" -S -o "' + $outputPath + '" --port ' + $Port + ' --seconds ' + $Seconds)
 } elseif ($Port) {
     # The shared bench's one lease procedure.
-    . 'C:\PMFBuild\board-leases\lease.ps1'
+    . $leaseScript
     $lease = Get-BoardLease -Port $Port -Owner $LeaseOwner -Minutes ([Math]::Ceiling(($Seconds + 90) / 60))
     try {
         Invoke-Forge ('--compile "' + $sourcePath + '" -S -o "' + $outputPath + '" --port ' + $Port + ' --seconds ' + $Seconds)

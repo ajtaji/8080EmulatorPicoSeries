@@ -1,0 +1,7 @@
+; The Space Invaders machine on the Pico 2 W with the LAFVIN ST7796 panel,
+; running YOUR ROM: first embed it (it stays out of git),
+;   py -3 tools/embed_rom.py <folder with invaders.h/g/f/e, or one 8 KB file> src/inv_rom_user.pmi
+; then build this file. No sound in the Pico 2 W build.
+#INV_TEST = 2
+XIncludeFile "invaders_rp2350.pmi"
+InvMain()

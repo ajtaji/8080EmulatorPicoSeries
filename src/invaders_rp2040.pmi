@@ -2,7 +2,8 @@
 ; program that includes this sets #INV_AUDIO (1: Bluetooth sound, which needs
 ; a speaker address from a private wrapper) and #INV_TEST (1: the built-in ROM
 ; is the machine test ROM, checked on the board; 0: the PureMetal demo,
-; demo/demo.invaders), then calls InvMain().
+; demo/demo.invaders; 2: your own ROM, embedded into src/inv_rom_user.pmi by
+; tools/embed_rom.py), then calls InvMain().
 #CLOCK_KHZ = 200000
 #CPU_TIMING = 1
 #CPU_ASM_TAIL = 1
@@ -40,6 +41,8 @@ CompilerElse
 CompilerEndIf
 CompilerIf #INV_TEST = 1
   XIncludeFile "inv_rom_test.pmi"
+CompilerElseIf #INV_TEST = 2
+  XIncludeFile "inv_rom_user.pmi"   ; your own ROM: tools/embed_rom.py, not in git
 CompilerElse
   XIncludeFile "inv_rom_demo.pmi"
 CompilerEndIf

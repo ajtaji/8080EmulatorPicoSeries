@@ -1,0 +1,8 @@
+; The Space Invaders machine on the Pico W with the LAFVIN ST7796 panel,
+; running YOUR ROM: first embed it (it stays out of git),
+;   py -3 tools/embed_rom.py <folder with invaders.h/g/f/e, or one 8 KB file> src/inv_rom_user.pmi
+; then build this file. No sound (a private wrapper can add a speaker).
+#INV_AUDIO = 0
+#INV_TEST = 2
+XIncludeFile "invaders_rp2040.pmi"
+InvMain()
