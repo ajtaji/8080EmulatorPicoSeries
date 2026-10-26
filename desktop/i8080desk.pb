@@ -18,6 +18,11 @@
 ; it is started from; a ROM it cannot read gets an error box.
 ; --exit-after <frames>: start as usual, then save startup.png and startup.log
 ; (what was loaded) beside the exe and close - a check with no one watching.
+; --tab <n>: open on tab n (0 Screen, 1 Console, 2 Memory, 3 Suite results, 4 Controls).
+; --pointer-test <txt>: every control against synthetic pointer positions, then close.
+; --fullscreen-test <txt> [--fullscreen-shot <png>]: F11 and Esc posted to the
+; window itself: checks full screen and the way back, then closes.
+; Keys: the cabinet's inputs and the window's shortcuts are one table, controls.pbi.
 
 CompilerIf Defined(GL_ENGINE_DIR$, #PB_Constant) = 0
   #GL_ENGINE_DIR$ = "../../Neon-Arcade-Dispay-Engine/"   ; the engine cloned beside this repository
@@ -33,6 +38,7 @@ XIncludeFile "GlSpriteFunctions.pbi"
 XIncludeFile "GlUI.pbi"
 XIncludeFile "GlUIChrome.pbi"
 IncludePath ""
+XIncludeFile "controls.pbi"          ; every key the window answers to, one table
 UsePNGImageEncoder()
 
 ; ---------------------------------------------------------------- state
@@ -45,7 +51,7 @@ Global SuiteIndex.i = -1, SuiteCycles.q, SuiteStartMs.q
 Global Dim Mn$(255)
 Global Dim OpLen.i(255)
 Global NewList Results$()
-Global Folder$, Root$, MachineLoadError$, ExitAfter.i
+Global Folder$, Root$, MachineLoadError$, ExitAfter.i, StartTab.i
 Global *ScreenTex.GLSprite, *ScreenBuf, MachineAcc.f, MachineMs.q, MachineSelfTest.i, MachineFramesRun.i, MachineSelfTestFrames.i = 150
 Declare MachineSlice()
 Global ProfMarks$, ProfLast.q
@@ -212,7 +218,7 @@ Procedure LoadMachine(path$, name$)
     LoadedName$ = name$ : RunCycles = 0 : SuiteIndex = -1 : RightTab = 0
     MachineAcc = 0 : MachineMs = ElapsedMilliseconds() : MachineFramesRun = 0
     Running = #True : MachineLoadError$ = ""
-    Status$ = "Space Invaders hardware: " + name$ + " - arrows move, Space fires, 1/2 start, C coin"
+    Status$ = "Space Invaders hardware: " + name$ + " - the keys are on the Controls tab"
   Else
     MachineLoadError$ = "Cannot read the ROM " + path$ + " (one file up to 8 KB, or a folder with invaders.h/g/f/e)"
     Status$ = MachineLoadError$
@@ -226,12 +232,7 @@ EndProcedure
 Procedure MachineInputs()
   Protected v.i
   If GetActiveWindow() = Win
-    If GetAsyncKeyState_(#VK_LEFT) & $8000 : v | #INV_P1LEFT : EndIf
-    If GetAsyncKeyState_(#VK_RIGHT) & $8000 : v | #INV_P1RIGHT : EndIf
-    If GetAsyncKeyState_(#VK_SPACE) & $8000 : v | #INV_P1FIRE : EndIf
-    If GetAsyncKeyState_(#VK_1) & $8000 : v | #INV_P1START : EndIf
-    If GetAsyncKeyState_(#VK_2) & $8000 : v | #INV_P2START : EndIf
-    If GetAsyncKeyState_(#VK_C) & $8000 : v | #INV_COIN : EndIf
+    v = CtlInputsHeld()                                  ; controls.pbi
   EndIf
   InvIn1 = v
 EndProcedure
@@ -470,6 +471,109 @@ Procedure ScreenInit()
   glTexImage2D_(#GL_TEXTURE_2D, 0, #GL_RGBA, 224, 256, 0, #GL_BGRA_EXT, #GL_UNSIGNED_BYTE, *ScreenBuf)
 EndProcedure
 
+; ---------------------------------------------------------------- full screen
+; A borderless window over the monitor the window is on (no display-mode
+; change); the windowed placement and style are kept and put back exactly on
+; leaving. F11 or the Full screen button toggles it, Esc leaves it (neither the
+; Space Invaders cabinet nor the CP/M console has an Esc key, so nothing is
+; taken from the machine). Only the machine's screen is drawn: upright, at the
+; cabinet monitor's 3:4 shape, centred on black. Emulation, 60 frames a second
+; and sound run on; the pointer hides after two idle seconds.
+Global FullScreen.i, FsStyle.i, FsCursorHidden.i, FsMouseX.i, FsMouseY.i, FsMouseMs.q
+Global FsGameX.f, FsGameY.f, FsGameW.f, FsGameH.f, FsPlacement.WINDOWPLACEMENT, FsTex.GLSprite
+
+Procedure FsShowCursor(show.i)
+  If show And FsCursorHidden : ShowCursor_(#True) : FsCursorHidden = 0 : EndIf
+  If show = 0 And FsCursorHidden = 0 : ShowCursor_(#False) : FsCursorHidden = 1 : EndIf
+EndProcedure
+
+Procedure EnterFullScreen()
+  Protected hwnd.i = WindowID(Win), mi.MONITORINFO
+  If FullScreen : ProcedureReturn : EndIf
+  FsPlacement\length = SizeOf(WINDOWPLACEMENT) : GetWindowPlacement_(hwnd, @FsPlacement)
+  FsStyle = GetWindowLongPtr_(hwnd, #GWL_STYLE)
+  mi\cbSize = SizeOf(MONITORINFO) : GetMonitorInfo_(MonitorFromWindow_(hwnd, 2), @mi)   ; 2: the nearest monitor
+  SetWindowLongPtr_(hwnd, #GWL_STYLE, FsStyle & ~(#WS_CAPTION | #WS_THICKFRAME | #WS_MINIMIZEBOX | #WS_MAXIMIZEBOX | #WS_SYSMENU))
+  SetWindowPos_(hwnd, #HWND_TOP, mi\rcMonitor\left, mi\rcMonitor\top, mi\rcMonitor\right - mi\rcMonitor\left,
+                mi\rcMonitor\bottom - mi\rcMonitor\top, #SWP_FRAMECHANGED | #SWP_NOOWNERZORDER | #SWP_SHOWWINDOW)
+  FullScreen = 1 : FsMouseMs = ElapsedMilliseconds()
+EndProcedure
+
+Procedure LeaveFullScreen()
+  Protected hwnd.i = WindowID(Win)
+  If FullScreen = 0 : ProcedureReturn : EndIf
+  SetWindowLongPtr_(hwnd, #GWL_STYLE, FsStyle)
+  SetWindowPlacement_(hwnd, @FsPlacement)
+  SetWindowPos_(hwnd, 0, 0, 0, 0, 0, #SWP_FRAMECHANGED | #SWP_NOMOVE | #SWP_NOSIZE | #SWP_NOZORDER | #SWP_NOOWNERZORDER)
+  FullScreen = 0 : FsShowCursor(1)
+EndProcedure
+
+; The window's actions, from the key table.
+Procedure DoAction(action.i)
+  Select action
+    Case #CTL_FULLSCREEN : If FullScreen : LeaveFullScreen() : Else : EnterFullScreen() : EndIf
+    Case #CTL_LEAVEFULL : LeaveFullScreen()
+  EndSelect
+EndProcedure
+
+; The screen's rectangle on a pw x ph canvas: the 224x256 picture upright at
+; the cabinet monitor's 3:4 shape (a 4:3 tube turned on its side), the height a
+; whole number of 256 lines when that loses less than a tenth of it, centred.
+Procedure FsLayout(pw.i, ph.i)
+  Protected hh.f, i.i
+  hh = ph : If hh * 3.0 / 4.0 > pw : hh = pw * 4.0 / 3.0 : EndIf
+  i = Int(hh / 256) : If i >= 1 And i * 256 >= hh * 0.9 : hh = i * 256 : EndIf
+  FsGameH = hh : FsGameW = hh * 3.0 / 4.0
+  FsGameX = (pw - FsGameW) / 2 : FsGameY = (ph - FsGameH) / 2
+EndProcedure
+
+; Full screen's frame: the machine's screen only.
+Procedure FsDraw()
+  glClearColor_(0.0, 0.0, 0.0, 1.0) : glClear_(#GL_COLOR_BUFFER_BIT)
+  FsLayout(CanvasW, CanvasH)
+  If Machine <> #MACHINE_INVADERS
+    Neon_Text(*Neon_FontUI, Neon_S(24), Neon_S(24), "No machine ROM loaded - Esc leaves full screen", Neon_C_FaintR, Neon_C_FaintG, Neon_C_FaintB)
+    ProcedureReturn
+  EndIf
+  InvRender(*ScreenBuf)
+  glBindTexture_(#GL_TEXTURE_2D, *ScreenTex\TextureID)
+  glTexSubImage2D_(#GL_TEXTURE_2D, 0, 0, 0, 224, 256, #GL_BGRA_EXT, #GL_UNSIGNED_BYTE, *ScreenBuf)
+  ; the same texture through a header of the shown size, so the quad takes the 3:4 shape
+  FsTex\TextureID = *ScreenTex\TextureID : FsTex\Width = FsGameW : FsTex\Height = FsGameH
+  DrawGLSprite(@FsTex, FsGameX, FsGameY, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, #True, -1.0, -1.0, -1.0, -1.0, #True)
+EndProcedure
+
+; The Controls tab: every key the window answers to, read from controls.pbi.
+Procedure ControlsPane(x.f, y.f, w.f, h.f)
+  Protected lh.f = GLFontLineHeight(*Neon_FontUI) + Neon_S(6), yy.f = y + Neon_S(10), c1.f = x + Neon_S(14), c2.f = x + Neon_S(200), c3.f = x + Neon_S(380)
+  Neon_Text(*Neon_FontBold, c1, yy, "Space Invaders cabinet", Neon_C_AmbR, Neon_C_AmbG, Neon_C_AmbB)
+  Neon_Text(*Neon_FontBold, c2, yy, "Key", Neon_C_AmbR, Neon_C_AmbG, Neon_C_AmbB)
+  Neon_Text(*Neon_FontBold, c3, yy, "Port", Neon_C_AmbR, Neon_C_AmbG, Neon_C_AmbB)
+  yy + lh
+  ForEach CtlKeys()
+    If CtlKeys()\bit
+      Neon_Text(*Neon_FontUI, c1, yy, CtlKeys()\what$, Neon_C_TextR, Neon_C_TextG, Neon_C_TextB)
+      Neon_Text(*Neon_FontMono, c2, yy, CtlKeys()\key$, Neon_C_GrnR, Neon_C_GrnG, Neon_C_GrnB)
+      Neon_Text(*Neon_FontMono, c3, yy, "IN 1 bit " + Str(CtlBitNumber(CtlKeys()\bit)), Neon_C_DimR, Neon_C_DimG, Neon_C_DimB)
+      yy + lh
+    EndIf
+  Next
+  Neon_Text(*Neon_FontUI, c1, yy, "Gamepad: none - the keyboard only. Keys work while the window has the focus.", Neon_C_DimR, Neon_C_DimG, Neon_C_DimB)
+  yy + lh * 2
+  Neon_Text(*Neon_FontBold, c1, yy, "Window", Neon_C_AmbR, Neon_C_AmbG, Neon_C_AmbB)
+  Neon_Text(*Neon_FontBold, c2, yy, "Key", Neon_C_AmbR, Neon_C_AmbG, Neon_C_AmbB)
+  yy + lh
+  ForEach CtlKeys()
+    If CtlKeys()\bit = 0
+      Neon_Text(*Neon_FontUI, c1, yy, CtlKeys()\what$, Neon_C_TextR, Neon_C_TextG, Neon_C_TextB)
+      Neon_Text(*Neon_FontMono, c2, yy, CtlKeys()\key$, Neon_C_GrnR, Neon_C_GrnG, Neon_C_GrnB)
+      yy + lh
+    EndIf
+  Next
+  Neon_Text(*Neon_FontUI, c1, yy, "Full screen is also the button on the Screen tab. The machine has no Esc key of its own, so Esc is the window's.",
+            Neon_C_DimR, Neon_C_DimG, Neon_C_DimB)
+EndProcedure
+
 Procedure ScreenPane(x.f, y.f, w.f, h.f)
   Protected k.i, sx.f, sy.f, lh.f = GLFontLineHeight(*Neon_FontSmall) + Neon_S(4), ty.f
   If Btn(x + Neon_S(10), y + Neon_S(6), Neon_S(150), Neon_S(28), "Machine test ROM", Bool(InvLoaded$ = MachineTestRom() And Machine = #MACHINE_INVADERS))
@@ -478,7 +582,10 @@ Procedure ScreenPane(x.f, y.f, w.f, h.f)
   If Btn(x + Neon_S(168), y + Neon_S(6), Neon_S(150), Neon_S(28), "PureMetal demo", Bool(InvLoaded$ = DemoRom() And Machine = #MACHINE_INVADERS))
     LoadMachine(DemoRom(), "PureMetal demo")
   EndIf
-  Neon_Text(*Neon_FontSmall, x + Neon_S(330), y + Neon_S(12), "Space Invaders (Taito 8080) hardware. Open... loads a ROM: 8 KB, or a folder of invaders.h/g/f/e",
+  If Btn(x + Neon_S(326), y + Neon_S(6), Neon_S(150), Neon_S(28), "Full screen  " + CtlActionKeys(#CTL_FULLSCREEN))
+    EnterFullScreen()
+  EndIf
+  Neon_Text(*Neon_FontSmall, x + Neon_S(488), y + Neon_S(12), "Space Invaders (Taito 8080) hardware. Open... loads a ROM: 8 KB, or a folder of invaders.h/g/f/e",
             Neon_C_DimR, Neon_C_DimG, Neon_C_DimB)
   If Machine <> #MACHINE_INVADERS
     Neon_Text(*Neon_FontUI, x + Neon_S(14), y + Neon_S(60), "No machine ROM loaded.", Neon_C_FaintR, Neon_C_FaintG, Neon_C_FaintB)
@@ -506,8 +613,9 @@ Procedure ScreenPane(x.f, y.f, w.f, h.f)
               "  " + StringField("square|pulse|triangle|noise", InvTones(k)\Wave + 1, "|"), Neon_C_GrnR, Neon_C_GrnG, Neon_C_GrnB) : ty + lh
   Next
   ty + lh
-  Neon_Text(*Neon_FontSmall, sx, ty, "arrows move, Space fires", Neon_C_DimR, Neon_C_DimG, Neon_C_DimB) : ty + lh
-  Neon_Text(*Neon_FontSmall, sx, ty, "1 / 2 start, C coin", Neon_C_DimR, Neon_C_DimG, Neon_C_DimB) : ty + lh
+  ForEach CtlKeys()                                    ; the keys, from controls.pbi
+    Neon_Text(*Neon_FontSmall, sx, ty, CtlKeys()\key$ + "  " + CtlKeys()\what$, Neon_C_DimR, Neon_C_DimG, Neon_C_DimB) : ty + lh
+  Next
   If AudioOk = 0
     Neon_Text(*Neon_FontSmall, sx, ty, "sound off", Neon_C_FaintR, Neon_C_FaintG, Neon_C_FaintB)
   EndIf
@@ -580,12 +688,13 @@ Procedure DrawFrame()
   RegistersPane(Neon_S(8), top, colW, Neon_S(300))
   DisasmPane(Neon_S(8), top + Neon_S(308), colW, CanvasH - top - Neon_S(308) - Neon_S(40))
   Neon_Panel(colW + Neon_S(16), top, CanvasW - colW - Neon_S(24), CanvasH - top - Neon_S(40), "", Neon_C_AccR, Neon_C_AccG, Neon_C_AccB)
-  sel = Neon_TabStrip(300, colW + Neon_S(17), top + 1, CanvasW - colW - Neon_S(26), Neon_S(30), "Screen|Console|Memory|Suite results", RightTab)
+  sel = Neon_TabStrip(300, colW + Neon_S(17), top + 1, CanvasW - colW - Neon_S(26), Neon_S(30), "Screen|Console|Memory|Suite results|Controls", RightTab)
   If sel <> RightTab : RightTab = sel : EndIf
   Select RightTab
     Case 0 : ScreenPane(colW + Neon_S(16), top + Neon_S(34), CanvasW - colW - Neon_S(24), CanvasH - top - Neon_S(78))
     Case 1 : ConsolePane(colW + Neon_S(16), top + Neon_S(34), CanvasW - colW - Neon_S(24), CanvasH - top - Neon_S(78))
     Case 2 : MemoryPane(colW + Neon_S(16), top + Neon_S(34), CanvasW - colW - Neon_S(24), CanvasH - top - Neon_S(78))
+    Case 4 : ControlsPane(colW + Neon_S(16), top + Neon_S(34), CanvasW - colW - Neon_S(24), CanvasH - top - Neon_S(78))
     Default : ResultsPane(colW + Neon_S(16), top + Neon_S(34), CanvasW - colW - Neon_S(24), CanvasH - top - Neon_S(78))
   EndSelect
   ; Status line.
@@ -607,6 +716,7 @@ EndProcedure
 Global SynthFile$, SynthX.f, SynthY.f, SynthDown.i, SynthCase.i, SynthPoint.i, SynthFrame.i
 Global SynthFails.i, SynthPoints.i, SynthLog$, SynthWorst.f, SynthMemTop.i, SynthRunning.i
 Global Dim SynthName$(40), Dim SynthTab.i(40), Dim SynthRun.i(40), SynthCount.i
+#SYNTH_TABS = 5                     ; Screen, Console, Memory, Suite results, Controls
 
 Procedure SynthAdd(name$, tab.i, run.i)
   SynthName$(SynthCount) = name$ : SynthTab(SynthCount) = tab : SynthRun(SynthCount) = run : SynthCount + 1
@@ -620,9 +730,9 @@ Procedure SynthInit()
   SynthAdd("Run all suites", -1, -1) : SynthAdd("Run", -1, 0) : SynthAdd("Pause", -1, 1)
   SynthAdd("Step", -1, 0) : SynthAdd("Step 100", -1, 0) : SynthAdd("Reset", -1, -1) : SynthAdd("Break at field", -1, -1)
   ; the tabs
-  For i = 0 To 3 : SynthAdd("tab " + Str(i), -1, -1) : Next
+  For i = 0 To #SYNTH_TABS - 1 : SynthAdd("tab " + Str(i), -1, -1) : Next
   ; the Screen tab's buttons
-  SynthAdd("Machine test ROM", 0, -1) : SynthAdd("PureMetal demo", 0, -1)
+  SynthAdd("Machine test ROM", 0, -1) : SynthAdd("PureMetal demo", 0, -1) : SynthAdd("Full screen  " + CtlActionKeys(#CTL_FULLSCREEN), 0, -1)
   ; the Memory tab: field, buttons, and the scroll bar reaching the bottom of the window
   SynthAdd("Go to field", 2, -1) : SynthAdd("PC", 2, -1) : SynthAdd("SP", 2, -1) : SynthAdd("HL", 2, -1)
   SynthAdd("memory scroll bar", 2, -1)
@@ -686,8 +796,8 @@ Procedure SynthStep()
       inside = Bool(SynthPoint <= 1)
       If Left(name$, 4) = "tab "
         i = Val(Mid(name$, 5))
-        If inside : expect$ = "tab " + Str(i) : ElseIf SynthPoint = 2 And i < 3 : expect$ = "tab " + Str(i + 1) : Else : expect$ = "" : EndIf
-        If RightTab >= 0 And RightTab <= 3 : got$ = "tab " + Str(RightTab) : EndIf
+        If inside : expect$ = "tab " + Str(i) : ElseIf SynthPoint = 2 And i < #SYNTH_TABS - 1 : expect$ = "tab " + Str(i + 1) : Else : expect$ = "" : EndIf
+        If RightTab >= 0 And RightTab < #SYNTH_TABS : got$ = "tab " + Str(RightTab) : EndIf
       ElseIf name$ = "Break at field" Or name$ = "Go to field"
         If inside : expect$ = name$ : EndIf
         If (name$ = "Break at field" And Neon_FocusID = 101) Or (name$ = "Go to field" And Neon_FocusID = 201) : got$ = name$ : EndIf
@@ -711,6 +821,56 @@ Procedure SynthStep()
   EndSelect
 EndProcedure
 
+; ---------------------------------------------------------------- --fullscreen-test
+; Full screen by its own keys, without the real pointer: F11 is posted to the
+; window's GL gadget and Esc to the window (the engine's Esc shortcut). Checked:
+; the window covers its monitor, the screen is upright at 3:4 and centred, Esc
+; leaves, and the windowed rectangle and style come back exactly.
+Global FsTestOn.i, FsTestFile$, FsTestShot$, FsTestStep.i, FsTestWait.i, FsTestFails.i, FsTestLog$
+Global FsTestRect.RECT, FsTestStyle.i
+
+Procedure FsTestCheck(ok.i, what$)
+  If ok = 0 : FsTestFails + 1 : FsTestLog$ + "FAIL " : Else : FsTestLog$ + "ok   " : EndIf
+  FsTestLog$ + what$ + #LF$
+EndProcedure
+
+Procedure FsTestTick()
+  Protected r.RECT, mi.MONITORINFO, hwnd.i = WindowID(Win), f.i, aspect.f
+  If FsTestStep = 0 And Machine = #MACHINE_INVADERS And InvFrames < 420 : ProcedureReturn : EndIf   ; windowed until the demo's titles are up
+  FsTestWait + 1 : If FsTestWait < 30 : ProcedureReturn : EndIf
+  FsTestWait = 0 : FsTestStep + 1
+  Select FsTestStep
+    Case 1
+      GetWindowRect_(hwnd, @FsTestRect) : FsTestStyle = GetWindowLongPtr_(hwnd, #GWL_STYLE)
+      FsTestLog$ + "windowed: " + Str(FsTestRect\left) + "," + Str(FsTestRect\top) + " " + Str(FsTestRect\right - FsTestRect\left) + "x" +
+                   Str(FsTestRect\bottom - FsTestRect\top) + ", scale " + StrF(Neon_UIScale, 2) + ", machine " + LoadedName$ + #LF$
+      PostMessage_(GadgetID(Gl), #WM_KEYDOWN, #VK_F11, 0) : PostMessage_(GadgetID(Gl), #WM_KEYUP, #VK_F11, 0)
+    Case 2
+      GetWindowRect_(hwnd, @r) : mi\cbSize = SizeOf(MONITORINFO) : GetMonitorInfo_(MonitorFromWindow_(hwnd, 2), @mi)
+      FsTestCheck(FullScreen, "F11 entered full screen")
+      FsTestCheck(Bool(r\left = mi\rcMonitor\left And r\top = mi\rcMonitor\top And r\right = mi\rcMonitor\right And r\bottom = mi\rcMonitor\bottom),
+                  "the window covers its monitor " + Str(mi\rcMonitor\right - mi\rcMonitor\left) + "x" + Str(mi\rcMonitor\bottom - mi\rcMonitor\top))
+      FsTestCheck(Bool(CanvasW = mi\rcMonitor\right - mi\rcMonitor\left And CanvasH = mi\rcMonitor\bottom - mi\rcMonitor\top),
+                  "the canvas is the whole monitor (" + Str(CanvasW) + "x" + Str(CanvasH) + ")")
+      aspect = FsGameW / FsGameH
+      FsTestCheck(Bool(Abs(aspect - 0.75) < 0.002), "the screen " + StrF(FsGameW, 1) + "x" + StrF(FsGameH, 1) + " is upright at the cabinet's 3:4 (" + StrF(aspect, 4) + ")")
+      FsTestCheck(Bool(Abs(FsGameX * 2 + FsGameW - CanvasW) <= 1 And Abs(FsGameY * 2 + FsGameH - CanvasH) <= 1), "it is centred at " + StrF(FsGameX, 1) + "," + StrF(FsGameY, 1))
+      FsTestCheck(Bool(Machine = #MACHINE_INVADERS And InvFrames > 0), "the machine runs on (frame " + Str(InvFrames) + ")")
+      If FsTestShot$ <> "" : SaveScreenshot(FsTestShot$) : EndIf
+    Case 3
+      PostMessage_(hwnd, #WM_KEYDOWN, #VK_ESCAPE, 0) : PostMessage_(hwnd, #WM_KEYUP, #VK_ESCAPE, 0)
+    Case 4
+      GetWindowRect_(hwnd, @r)
+      FsTestCheck(Bool(FullScreen = 0), "Esc left full screen")
+      FsTestCheck(Bool(r\left = FsTestRect\left And r\top = FsTestRect\top And r\right = FsTestRect\right And r\bottom = FsTestRect\bottom),
+                  "the windowed rectangle came back: " + Str(r\left) + "," + Str(r\top) + " " + Str(r\right - r\left) + "x" + Str(r\bottom - r\top))
+      FsTestCheck(Bool(GetWindowLongPtr_(hwnd, #GWL_STYLE) = FsTestStyle), "the window's frame and style came back")
+      FsTestLog$ + "fullscreen-test: " + Str(FsTestFails) + " failures" + #LF$
+      f = CreateFile(#PB_Any, FsTestFile$) : If f : WriteString(f, FsTestLog$) : CloseFile(f) : EndIf
+      Quit = #True
+  EndSelect
+EndProcedure
+
 ; ---------------------------------------------------------------- main
 Procedure Main()
   Protected ev.i, now.q, dt.f, arg$, lib.i, fn.i, w.i = 1400, h.i = 880, down.b, log.i, k.i, mute.i
@@ -718,6 +878,12 @@ Procedure Main()
   For k = 0 To CountProgramParameters() - 1
     If LCase(ProgramParameter(k)) = "--mute"
       mute = #True
+    ElseIf LCase(ProgramParameter(k)) = "--tab"
+      k + 1 : StartTab = Val(ProgramParameter(k)) + 1            ; 0 Screen ... 4 Controls
+    ElseIf LCase(ProgramParameter(k)) = "--fullscreen-test"
+      k + 1 : FsTestOn = #True : FsTestFile$ = ProgramParameter(k) : mute = #True
+    ElseIf LCase(ProgramParameter(k)) = "--fullscreen-shot"
+      k + 1 : FsTestShot$ = ProgramParameter(k)
     ElseIf LCase(ProgramParameter(k)) = "--pointer-test"
       k + 1 : SynthOn = #True : SynthFile$ = ProgramParameter(k) : mute = #True
     ElseIf LCase(ProgramParameter(k)) = "--exit-after"
@@ -735,6 +901,7 @@ Procedure Main()
   EndIf
   ProfMark("dpi")
   CpmInitTests()
+  CtlInit()
   If SynthOn : SynthInit() : EndIf
   InitDisasm()
   Root$ = RepoRoot()
@@ -797,6 +964,7 @@ Procedure Main()
     If mute = 0 : AudioOpen() : EndIf
     LoadMachine(DemoRom(), "PureMetal demo")
   EndIf
+  If StartTab : RightTab = StartTab - 1 : EndIf
   ProfMark("loaded")
   LastMs = ElapsedMilliseconds()
   ProfStartup = ElapsedMilliseconds() - ProfBoot
@@ -808,6 +976,9 @@ Procedure Main()
         Case #PB_Event_CloseWindow : Quit = #True
         Case #PB_Event_SizeWindow : CheckScale() : SizeCanvas()
         Case #PB_Event_MoveWindow : CheckScale() : SizeCanvas()
+        Case #PB_Event_Menu
+          ; the engine maps Esc to menu event 1001 on the window: Esc leaves full screen
+          If EventMenu() = 1001 : DoAction(CtlAction(#VK_ESCAPE)) : EndIf
         Case #PB_Event_Gadget
           If EventGadget() = Gl
             Select EventType()
@@ -820,6 +991,7 @@ Procedure Main()
           EndIf
       EndSelect
     Until ev = 0
+    If KeyCode And CtlAction(KeyCode) : DoAction(CtlAction(KeyCode)) : EndIf   ; F11 (controls.pbi)
     ProfEvents + ElapsedMilliseconds() - ProfT
     ProfT = ElapsedMilliseconds()
     If Running : RunSlice(14) : EndIf
@@ -839,10 +1011,21 @@ Procedure Main()
     glClearColor_(Neon_C_BgR, Neon_C_BgG, Neon_C_BgB, 1.0)
     glClear_(#GL_COLOR_BUFFER_BIT)
     ProfT = ElapsedMilliseconds()
-    DrawFrame()
+    If FullScreen
+      FsDraw()
+      ; the pointer hides after two idle seconds and comes back when it moves
+      If WindowMouseX(Win) <> FsMouseX Or WindowMouseY(Win) <> FsMouseY
+        FsMouseX = WindowMouseX(Win) : FsMouseY = WindowMouseY(Win) : FsMouseMs = now : FsShowCursor(1)
+      ElseIf now - FsMouseMs > 2000
+        FsShowCursor(0)
+      EndIf
+    Else
+      DrawFrame()
+    EndIf
     ProfDraw + ElapsedMilliseconds() - ProfT
     Neon_ChromeEndFrame()
     If SynthOn : SynthStep() : EndIf
+    If FsTestOn : FsTestTick() : EndIf
     If SelfTest And SuiteIndex = -1 And SelfTestDone = 0
       SelfTestDone = 1
       RightTab = 3                      ; draw the results tab once more, then capture it
@@ -890,6 +1073,7 @@ Procedure Main()
     ProfFlip + ElapsedMilliseconds() - ProfT : ProfFrames + 1
     If Running = 0 : Delay(10) : EndIf
   Until Quit
+  FsShowCursor(1)
   AudioClose()
 EndProcedure
 Main()

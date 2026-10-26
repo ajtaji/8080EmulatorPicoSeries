@@ -83,6 +83,27 @@ The images in `firmware/` were built with PureMetal Forge (signed compiler
 
 A serial key holds its control for 0.2 s.
 
+**On the desktop** (`desktop/i8080desk.exe`; the window's **Controls** tab
+shows this same table, read from `desktop/controls.pbi`, the table the input
+code uses):
+
+| Cabinet input | PC key | Port |
+|---|---|---|
+| Move left | Left arrow | IN 1 bit 5 |
+| Move right | Right arrow | IN 1 bit 6 |
+| Fire | Space | IN 1 bit 4 |
+| Insert a coin | C | IN 1 bit 0 |
+| 1-player start | 1 | IN 1 bit 2 |
+| 2-player start | 2 | IN 1 bit 1 |
+
+| Window | PC key |
+|---|---|
+| Full screen on / off | F11 (or the **Full screen** button on the Screen tab) |
+| Leave full screen | Esc |
+
+There is no gamepad input; the keys work while the window has the focus. The
+machine has no Esc key of its own, so Esc belongs to the window.
+
 ## Running the original Space Invaders
 
 **No Taito ROM is included in this repository or in any firmware image**, and
@@ -329,8 +350,12 @@ cannot read is reported in an error box and on the status line.
 .\desktop\i8080desk.exe --mute                   # no sound
 ```
 
-Keys on the Screen tab: arrows move, Space fires, 1 / 2 start, C coin. A
-relative path on the command line is tried from the current folder, the exe's
+The keys are under [Controls](#controls-space-invaders-machine) and on the
+window's **Controls** tab. **Full screen** (the Screen tab's button, or F11)
+shows only the machine's screen, upright at the cabinet monitor's 3:4 shape
+and centred, on the monitor the window is on; the machine, its sound and its
+60 frames a second run on. Esc or F11 leaves it and puts the window back where
+it was. A relative path on the command line is tried from the current folder, the exe's
 folder and the repository. The window also takes a `.COM` file to load, or
 `--selftest` (runs the four
 programs in the window, writes `selftest.log` and `selftest.png`, closes).
@@ -415,6 +440,10 @@ saves `selftest.png`.
 clickable control at the desktop's display scale with synthetic pointer
 positions (it never moves the real pointer): just inside each control's
 corners and just outside its right-hand and bottom edges.
+`i8080desk.exe --fullscreen-test result.txt [--fullscreen-shot full.png]`
+enters full screen by F11 and leaves by Esc (both posted to the window), and
+checks the window covers its monitor, the screen's 3:4 shape and centring,
+and that the windowed position, size and frame come back exactly.
 
 What passes on silicon is listed in [Verification on the board](#verification-on-the-board).
 
