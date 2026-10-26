@@ -411,6 +411,10 @@ at the end.
 **On the desktop** (see below): `verify_desktop.exe` runs the directed checks
 and the four programs; `i8080desk.exe --selftest` runs them in the window and
 saves `selftest.png`.
+`i8080desk.exe --pointer-test result.txt` checks the mouse against every
+clickable control at the desktop's display scale with synthetic pointer
+positions (it never moves the real pointer): just inside each control's
+corners and just outside its right-hand and bottom edges.
 
 What passes on silicon is listed in [Verification on the board](#verification-on-the-board).
 
