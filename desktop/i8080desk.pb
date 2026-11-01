@@ -924,6 +924,7 @@ Procedure Main()
     ProcedureReturn
   EndIf
   GL_HostScaleRead(Gl)                                 ; (the engine's: Linux_DPIScale on Linux)
+  SetActiveGadget(Gl)                                  ; key events (F11, the text fields): on Linux none arrive until it has the focus
   Scale = DisplayScale()
   Neon_UIScale = Scale
   ProfMark("scale")
@@ -988,7 +989,7 @@ Procedure Main()
               Case #PB_EventType_LeftButtonDown : MouseDown = #True
               Case #PB_EventType_LeftButtonUp : MouseDown = #False
               Case #PB_EventType_MouseWheel : Wheel + GetGadgetAttribute(Gl, #PB_OpenGL_WheelDelta)
-              Case #PB_EventType_KeyDown : KeyCode = GetGadgetAttribute(Gl, #PB_OpenGL_Key)
+              Case #PB_EventType_KeyDown : KeyCode = GL_KeyEventCode(GetGadgetAttribute(Gl, #PB_OpenGL_Key))   ; (the same code on both OSes)
               Case #PB_EventType_Input : KeyChar = GetGadgetAttribute(Gl, #PB_OpenGL_Input)
             EndSelect
           EndIf
