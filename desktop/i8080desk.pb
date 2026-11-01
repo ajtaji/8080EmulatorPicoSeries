@@ -898,8 +898,8 @@ Procedure Main()
       arg$ = ProgramParameter(k)
     EndIf
   Next
-  ; Before any window: the engine's host set-up (on Linux the X11 shield and
-  ; XInitThreads; nothing on Windows, where /DPIAWARE makes the window DPI-aware).
+  ; Before any window: the engine's host set-up (per-monitor DPI awareness on
+  ; Windows; the X11 shield, XInitThreads and its X error filter on Linux).
   GL_HostPrepare()
   ProfMark("host")
   CpmInitTests()
