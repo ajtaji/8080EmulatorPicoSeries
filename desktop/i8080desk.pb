@@ -1,11 +1,16 @@
 ; Intel 8080 on the desktop - the core, a CP/M test machine and a debugger,
 ; drawn with the Neon Arcade Display Engine.
 ;
-; Build (PowerShell, x64), with the Neon Arcade Display Engine
+; One source for Windows and Linux: everything the OS gives (the window, keys
+; held, sound, full screen, the pointer, the display scale) comes through the
+; engine, its HOST SERVICES (GlUtilities.pbi); nothing here calls the OS.
+;
+; Build (x64), with the Neon Arcade Display Engine
 ; (https://github.com/ajtaji/Neon-Arcade-Dispay-Engine) cloned beside this
-; repository:
-;   & 'C:\Program Files\PureBasic\Compilers\pbcompilerc.exe' i8080desk.pb /THREAD /DPIAWARE /OPTIMIZER /EXE i8080desk.exe
-; The engine elsewhere: add /CONSTANT GL_ENGINE_DIR$=<its folder>/ (with the trailing slash).
+; repository, from desktop/:
+;   Windows: pbcompilerc.exe i8080desk.pb /THREAD /DPIAWARE /OPTIMIZER /EXE i8080desk.exe
+;   Linux:   pbcompilerc i8080desk.pb -t -z -o i8080desk
+; The engine elsewhere: add the constant GL_ENGINE_DIR$=<its folder>/ (with the trailing slash).
 ;
 ; Command line: a .COM file or a machine ROM to load (add --mute for no sound,
 ; anywhere on the line); --selftest (run the four
@@ -29,7 +34,6 @@ CompilerIf Defined(GL_ENGINE_DIR$, #PB_Constant) = 0
 CompilerEndIf
 #CPU_DISPATCH = 0          ; computed goto: measured fastest on the PC
 XIncludeFile "machine.pbi"
-XIncludeFile "audio.pbi"
 IncludePath #GL_ENGINE_DIR$
 XIncludeFile "GlTypes.pbi"
 XIncludeFile "GlUtilities.pbi"
@@ -38,6 +42,7 @@ XIncludeFile "GlSpriteFunctions.pbi"
 XIncludeFile "GlUI.pbi"
 XIncludeFile "GlUIChrome.pbi"
 IncludePath ""
+XIncludeFile "audio.pbi"             ; the engine's sound service
 XIncludeFile "controls.pbi"          ; every key the window answers to, one table
 UsePNGImageEncoder()
 
@@ -51,7 +56,7 @@ Global SuiteIndex.i = -1, SuiteCycles.q, SuiteStartMs.q
 Global Dim Mn$(255)
 Global Dim OpLen.i(255)
 Global NewList Results$()
-Global Folder$, Root$, MachineLoadError$, ExitAfter.i, StartTab.i
+Global Folder$, Root$, MachineLoadError$, ExitAfter.i, StartTab.i, InputsSeen.i
 Global *ScreenTex.GLSprite, *ScreenBuf, MachineAcc.f, MachineMs.q, MachineSelfTest.i, MachineFramesRun.i, MachineSelfTestFrames.i = 150
 Declare MachineSlice()
 Global ProfMarks$, ProfLast.q
@@ -185,7 +190,7 @@ Procedure.s RepoRoot()
   For pass = 0 To 1
     If pass = 0 : d$ = GetPathPart(ProgramFilename()) : Else : d$ = GetCurrentDirectory() : EndIf
     For i = 0 To 4
-      If FileSize(d$ + "demo\demo_roms\invaders.h") = $800 Or FileSize(d$ + "machine\invaders_test.rom") > 0
+      If FileSize(d$ + "demo" + #PS$ + "demo_roms" + #PS$ + "invaders.h") = $800 Or FileSize(d$ + "machine" + #PS$ + "invaders_test.rom") > 0
         ProcedureReturn d$
       EndIf
       If Len(d$) <= 3 : Break : EndIf
@@ -196,17 +201,17 @@ Procedure.s RepoRoot()
 EndProcedure
 
 Procedure.s MachineTestRom()
-  ProcedureReturn Root$ + "machine\invaders_test.rom"
+  ProcedureReturn Root$ + "machine" + #PS$ + "invaders_test.rom"
 EndProcedure
 
 Procedure.s DemoRom()
-  ProcedureReturn Root$ + "demo\demo_roms"
+  ProcedureReturn Root$ + "demo" + #PS$ + "demo_roms"
 EndProcedure
 
 ; A ROM or program named on the command line: as given (from the current
 ; folder), else from the exe's folder, else from the repository.
 Procedure.s ResolvePath(p$)
-  Protected q$ = RTrim(p$, "\")
+  Protected q$ = RTrim(p$, #PS$)
   If FileSize(q$) <> -1 Or q$ = "" : ProcedureReturn q$ : EndIf
   If FileSize(GetPathPart(ProgramFilename()) + q$) <> -1 : ProcedureReturn GetPathPart(ProgramFilename()) + q$ : EndIf
   If Root$ <> "" And FileSize(Root$ + q$) <> -1 : ProcedureReturn Root$ + q$ : EndIf
@@ -224,6 +229,7 @@ Procedure LoadMachine(path$, name$)
     Status$ = MachineLoadError$
     If MachineSelfTest = 0 And ExitAfter = 0
       MessageRequester("Intel 8080", MachineLoadError$, #PB_MessageRequester_Error)
+      MouseDown = #False
     EndIf
   EndIf
 EndProcedure
@@ -234,7 +240,7 @@ Procedure MachineInputs()
   If GetActiveWindow() = Win
     v = CtlInputsHeld()                                  ; controls.pbi
   EndIf
-  InvIn1 = v
+  InvIn1 = v : InputsSeen | v
 EndProcedure
 
 Procedure MachineFrame()
@@ -270,15 +276,13 @@ Procedure MachineSlice()
 EndProcedure
 
 ; ---------------------------------------------------------------- window
+; The display scale as measured: the window's inner size in physical pixels
+; (the engine's GL_ClientPixels) over its logical inner width.
 Procedure.f DisplayScale()
-  Protected lib.i = OpenLibrary(#PB_Any, "user32.dll"), fn.i, dpi.i
-  If lib
-    fn = GetFunction(lib, "GetDpiForWindow")
-    If fn : dpi = CallFunctionFast(fn, WindowID(Win)) : EndIf
-    CloseLibrary(lib)
-  EndIf
-  If dpi <= 0 : ProcedureReturn 1.0 : EndIf
-  ProcedureReturn dpi / 96.0
+  Protected pw.i, ph.i, lw.i = WindowWidth(Win, #PB_Window_InnerCoordinate)
+  GL_ClientPixels(Win, @pw, @ph)
+  If lw <= 0 Or pw <= 0 : ProcedureReturn 1.0 : EndIf
+  ProcedureReturn pw / lw
 EndProcedure
 
 Procedure BuildFonts()
@@ -303,11 +307,9 @@ EndProcedure
 
 Procedure SizeCanvas()
   Protected cw.i = WindowWidth(Win, #PB_Window_InnerCoordinate), ch.i = WindowHeight(Win, #PB_Window_InnerCoordinate)
-  Protected r.RECT
   If cw <= 0 Or ch <= 0 : ProcedureReturn : EndIf
   ResizeGadget(Gl, 0, 0, cw, ch)
-  GetClientRect_(WindowID(Win), @r)
-  CanvasW = r\right - r\left : CanvasH = r\bottom - r\top
+  GL_ClientPixels(Win, @CanvasW, @CanvasH)
   If CanvasW < 1 : CanvasW = 1 : EndIf
   If CanvasH < 1 : CanvasH = 1 : EndIf
   Util_BaseWidth = CanvasW : Util_BaseHeight = CanvasH
@@ -316,26 +318,33 @@ Procedure SizeCanvas()
 EndProcedure
 
 ; The frame being drawn, to a PNG. glReadPixels gives rows bottom-up, as a
-; Windows 24-bit image keeps them, so each row is copied straight across
-; (RGBA to BGR) into the image's own buffer - Plot() per pixel took most of
-; a minute for a full window.
+; Windows image keeps them (a Linux one is top-down), so each row is copied
+; straight across into the image's own buffer in the layout it has (24 or 32
+; bits, BGR or RGB) - Plot() per pixel took most of a minute for a full window.
 Procedure SaveScreenshot(file$)
   Protected img.i = CreateImage(#PB_Any, CanvasW, CanvasH, 24), *dst, pitch.i, y.i, x.i, *s.Ascii, *d.Ascii, *row
-  Protected *pix = AllocateMemory(CanvasW * CanvasH * 4)
+  Protected *pix = AllocateMemory(CanvasW * CanvasH * 4), fmt.i, bpp.i, bgr.i
   glPixelStorei_(#GL_PACK_ALIGNMENT, 1)
   glReadPixels_(0, 0, CanvasW, CanvasH, #GL_RGBA, #GL_UNSIGNED_BYTE, *pix)
   If StartDrawing(ImageOutput(img))
-    *dst = DrawingBuffer() : pitch = DrawingBufferPitch()
+    *dst = DrawingBuffer() : pitch = DrawingBufferPitch() : fmt = DrawingBufferPixelFormat()
+    bpp = 3 : If fmt & (#PB_PixelFormat_32Bits_RGB | #PB_PixelFormat_32Bits_BGR) : bpp = 4 : EndIf
+    bgr = Bool(fmt & (#PB_PixelFormat_24Bits_BGR | #PB_PixelFormat_32Bits_BGR))
     For y = 0 To CanvasH - 1
-      If DrawingBufferPixelFormat() & #PB_PixelFormat_ReversedY
+      If fmt & #PB_PixelFormat_ReversedY
         *row = *dst + y * pitch               ; bottom-up, like glReadPixels
       Else
         *row = *dst + (CanvasH - 1 - y) * pitch
       EndIf
       *s = *pix + y * CanvasW * 4
       For x = 0 To CanvasW - 1
-        *d = *row + x * 3
-        PokeA(*d, PeekA(*s + 2)) : PokeA(*d + 1, PeekA(*s + 1)) : PokeA(*d + 2, PeekA(*s))
+        *d = *row + x * bpp
+        If bgr
+          PokeA(*d, PeekA(*s + 2)) : PokeA(*d + 1, PeekA(*s + 1)) : PokeA(*d + 2, PeekA(*s))
+        Else
+          PokeA(*d, PeekA(*s)) : PokeA(*d + 1, PeekA(*s + 1)) : PokeA(*d + 2, PeekA(*s + 2))
+        EndIf
+        If bpp = 4 : PokeA(*d + 3, 255) : EndIf
         *s + 4
       Next
     Next
@@ -473,38 +482,28 @@ EndProcedure
 
 ; ---------------------------------------------------------------- full screen
 ; A borderless window over the monitor the window is on (no display-mode
-; change); the windowed placement and style are kept and put back exactly on
-; leaving. F11 or the Full screen button toggles it, Esc leaves it (neither the
+; change); the engine's GL_FullscreenEnter / Leave keep the windowed placement
+; and put it back exactly on leaving. F11 or the Full screen button toggles it, Esc leaves it (neither the
 ; Space Invaders cabinet nor the CP/M console has an Esc key, so nothing is
 ; taken from the machine). Only the machine's screen is drawn: upright, at the
 ; cabinet monitor's 3:4 shape, centred on black. Emulation, 60 frames a second
 ; and sound run on; the pointer hides after two idle seconds.
-Global FullScreen.i, FsStyle.i, FsCursorHidden.i, FsMouseX.i, FsMouseY.i, FsMouseMs.q
-Global FsGameX.f, FsGameY.f, FsGameW.f, FsGameH.f, FsPlacement.WINDOWPLACEMENT, FsTex.GLSprite
+Global FullScreen.i, FsMouseX.i, FsMouseY.i, FsMouseMs.q
+Global FsGameX.f, FsGameY.f, FsGameW.f, FsGameH.f, FsTex.GLSprite
 
-Procedure FsShowCursor(show.i)
-  If show And FsCursorHidden : ShowCursor_(#True) : FsCursorHidden = 0 : EndIf
-  If show = 0 And FsCursorHidden = 0 : ShowCursor_(#False) : FsCursorHidden = 1 : EndIf
+Procedure FsShowCursor(show.i)                          ; (the engine's GL_CursorShow)
+  GL_CursorShow(Win, Gl, show)
 EndProcedure
 
 Procedure EnterFullScreen()
-  Protected hwnd.i = WindowID(Win), mi.MONITORINFO
   If FullScreen : ProcedureReturn : EndIf
-  FsPlacement\length = SizeOf(WINDOWPLACEMENT) : GetWindowPlacement_(hwnd, @FsPlacement)
-  FsStyle = GetWindowLongPtr_(hwnd, #GWL_STYLE)
-  mi\cbSize = SizeOf(MONITORINFO) : GetMonitorInfo_(MonitorFromWindow_(hwnd, 2), @mi)   ; 2: the nearest monitor
-  SetWindowLongPtr_(hwnd, #GWL_STYLE, FsStyle & ~(#WS_CAPTION | #WS_THICKFRAME | #WS_MINIMIZEBOX | #WS_MAXIMIZEBOX | #WS_SYSMENU))
-  SetWindowPos_(hwnd, #HWND_TOP, mi\rcMonitor\left, mi\rcMonitor\top, mi\rcMonitor\right - mi\rcMonitor\left,
-                mi\rcMonitor\bottom - mi\rcMonitor\top, #SWP_FRAMECHANGED | #SWP_NOOWNERZORDER | #SWP_SHOWWINDOW)
+  GL_FullscreenEnter(Win)
   FullScreen = 1 : FsMouseMs = ElapsedMilliseconds()
 EndProcedure
 
 Procedure LeaveFullScreen()
-  Protected hwnd.i = WindowID(Win)
   If FullScreen = 0 : ProcedureReturn : EndIf
-  SetWindowLongPtr_(hwnd, #GWL_STYLE, FsStyle)
-  SetWindowPlacement_(hwnd, @FsPlacement)
-  SetWindowPos_(hwnd, 0, 0, 0, 0, 0, #SWP_FRAMECHANGED | #SWP_NOMOVE | #SWP_NOSIZE | #SWP_NOZORDER | #SWP_NOOWNERZORDER)
+  GL_FullscreenLeave(Win)
   FullScreen = 0 : FsShowCursor(1)
 EndProcedure
 
@@ -514,6 +513,12 @@ Procedure DoAction(action.i)
     Case #CTL_FULLSCREEN : If FullScreen : LeaveFullScreen() : Else : EnterFullScreen() : EndIf
     Case #CTL_LEAVEFULL : LeaveFullScreen()
   EndSelect
+EndProcedure
+
+; A key pressed (#PB_Shortcut_ code): the action the key table gives it, if any.
+; F11 comes here as the GL gadget's key event, Esc as the engine's shortcut.
+Procedure KeyPressed(key.i)
+  If key And CtlAction(key) : DoAction(CtlAction(key)) : EndIf
 EndProcedure
 
 ; The screen's rectangle on a pw x ph canvas: the 224x256 picture upright at
@@ -535,7 +540,7 @@ Procedure FsDraw()
     Neon_Text(*Neon_FontUI, Neon_S(24), Neon_S(24), "No machine ROM loaded - Esc leaves full screen", Neon_C_FaintR, Neon_C_FaintG, Neon_C_FaintB)
     ProcedureReturn
   EndIf
-  InvRender(*ScreenBuf)
+  InvRender(*ScreenBuf, Bool(#GL_SpriteRowsBottomUp = 0))   ; rows in the order the engine draws a sprite
   glBindTexture_(#GL_TEXTURE_2D, *ScreenTex\TextureID)
   glTexSubImage2D_(#GL_TEXTURE_2D, 0, 0, 0, 224, 256, #GL_BGRA_EXT, #GL_UNSIGNED_BYTE, *ScreenBuf)
   ; the same texture through a header of the shown size, so the quad takes the 3:4 shape
@@ -591,7 +596,7 @@ Procedure ScreenPane(x.f, y.f, w.f, h.f)
     Neon_Text(*Neon_FontUI, x + Neon_S(14), y + Neon_S(60), "No machine ROM loaded.", Neon_C_FaintR, Neon_C_FaintG, Neon_C_FaintB)
     ProcedureReturn
   EndIf
-  InvRender(*ScreenBuf)
+  InvRender(*ScreenBuf, Bool(#GL_SpriteRowsBottomUp = 0))   ; rows in the order the engine draws a sprite
   glBindTexture_(#GL_TEXTURE_2D, *ScreenTex\TextureID)
   glTexSubImage2D_(#GL_TEXTURE_2D, 0, 0, 0, 224, 256, #GL_BGRA_EXT, #GL_UNSIGNED_BYTE, *ScreenBuf)
   k = Int((h - Neon_S(60)) / 256)
@@ -630,6 +635,7 @@ Procedure DrawFrame()
   bx = Neon_S(120) : by = Neon_S(9)
   If Btn(bx, by, bw, bh, "Open...")
     f$ = OpenFileRequester("Load a CP/M program or a machine ROM", Folder$, "CP/M program (*.com)|*.com;*.COM|Machine ROM (*.rom, *.bin)|*.rom;*.bin|All files|*.*", 0)
+    MouseDown = #False                                 ; the button came up over the requester, not the canvas
     If f$
       SuiteIndex = -1
       If LCase(GetExtensionPart(f$)) = "com"
@@ -822,12 +828,12 @@ Procedure SynthStep()
 EndProcedure
 
 ; ---------------------------------------------------------------- --fullscreen-test
-; Full screen by its own keys, without the real pointer: F11 is posted to the
-; window's GL gadget and Esc to the window (the engine's Esc shortcut). Checked:
-; the window covers its monitor, the screen is upright at 3:4 and centred, Esc
-; leaves, and the windowed rectangle and style come back exactly.
+; Full screen by its own keys, without the real pointer: F11 and Esc go into
+; the key handler a real press reaches (KeyPressed). Checked: the window covers
+; its monitor, the screen is upright at 3:4 and centred, Esc leaves, and the
+; windowed rectangle and client size come back exactly.
 Global FsTestOn.i, FsTestFile$, FsTestShot$, FsTestStep.i, FsTestWait.i, FsTestFails.i, FsTestLog$
-Global FsTestRect.RECT, FsTestStyle.i
+Global FsTestRect.GLHostRect, FsTestClientW.i, FsTestClientH.i
 
 Procedure FsTestCheck(ok.i, what$)
   If ok = 0 : FsTestFails + 1 : FsTestLog$ + "FAIL " : Else : FsTestLog$ + "ok   " : EndIf
@@ -835,22 +841,22 @@ Procedure FsTestCheck(ok.i, what$)
 EndProcedure
 
 Procedure FsTestTick()
-  Protected r.RECT, mi.MONITORINFO, hwnd.i = WindowID(Win), f.i, aspect.f
+  Protected r.GLHostRect, m.GLHostRect, cw.i, ch.i, f.i, aspect.f
   If FsTestStep = 0 And Machine = #MACHINE_INVADERS And InvFrames < 420 : ProcedureReturn : EndIf   ; windowed until the demo's titles are up
   FsTestWait + 1 : If FsTestWait < 30 : ProcedureReturn : EndIf
   FsTestWait = 0 : FsTestStep + 1
   Select FsTestStep
     Case 1
-      GetWindowRect_(hwnd, @FsTestRect) : FsTestStyle = GetWindowLongPtr_(hwnd, #GWL_STYLE)
-      FsTestLog$ + "windowed: " + Str(FsTestRect\left) + "," + Str(FsTestRect\top) + " " + Str(FsTestRect\right - FsTestRect\left) + "x" +
-                   Str(FsTestRect\bottom - FsTestRect\top) + ", scale " + StrF(Neon_UIScale, 2) + ", machine " + LoadedName$ + #LF$
-      PostMessage_(GadgetID(Gl), #WM_KEYDOWN, #VK_F11, 0) : PostMessage_(GadgetID(Gl), #WM_KEYUP, #VK_F11, 0)
+      GL_WindowRect(Win, @FsTestRect) : GL_ClientPixels(Win, @FsTestClientW, @FsTestClientH)
+      FsTestLog$ + "windowed: " + Str(FsTestRect\X) + "," + Str(FsTestRect\Y) + " " + Str(FsTestRect\W) + "x" + Str(FsTestRect\H) +
+                   ", client " + Str(FsTestClientW) + "x" + Str(FsTestClientH) + ", scale " + StrF(Neon_UIScale, 2) + ", machine " + LoadedName$ + #LF$
+      KeyPressed(#PB_Shortcut_F11)
     Case 2
-      GetWindowRect_(hwnd, @r) : mi\cbSize = SizeOf(MONITORINFO) : GetMonitorInfo_(MonitorFromWindow_(hwnd, 2), @mi)
+      GL_WindowRect(Win, @r) : GL_FullscreenRect(@m)
       FsTestCheck(FullScreen, "F11 entered full screen")
-      FsTestCheck(Bool(r\left = mi\rcMonitor\left And r\top = mi\rcMonitor\top And r\right = mi\rcMonitor\right And r\bottom = mi\rcMonitor\bottom),
-                  "the window covers its monitor " + Str(mi\rcMonitor\right - mi\rcMonitor\left) + "x" + Str(mi\rcMonitor\bottom - mi\rcMonitor\top))
-      FsTestCheck(Bool(CanvasW = mi\rcMonitor\right - mi\rcMonitor\left And CanvasH = mi\rcMonitor\bottom - mi\rcMonitor\top),
+      FsTestCheck(Bool(r\X = m\X And r\Y = m\Y And r\W = m\W And r\H = m\H),
+                  "the window " + Str(r\X) + "," + Str(r\Y) + " " + Str(r\W) + "x" + Str(r\H) + " covers its monitor " + Str(m\W) + "x" + Str(m\H))
+      FsTestCheck(Bool(CanvasW = m\W And CanvasH = m\H),
                   "the canvas is the whole monitor (" + Str(CanvasW) + "x" + Str(CanvasH) + ")")
       aspect = FsGameW / FsGameH
       FsTestCheck(Bool(Abs(aspect - 0.75) < 0.002), "the screen " + StrF(FsGameW, 1) + "x" + StrF(FsGameH, 1) + " is upright at the cabinet's 3:4 (" + StrF(aspect, 4) + ")")
@@ -858,13 +864,13 @@ Procedure FsTestTick()
       FsTestCheck(Bool(Machine = #MACHINE_INVADERS And InvFrames > 0), "the machine runs on (frame " + Str(InvFrames) + ")")
       If FsTestShot$ <> "" : SaveScreenshot(FsTestShot$) : EndIf
     Case 3
-      PostMessage_(hwnd, #WM_KEYDOWN, #VK_ESCAPE, 0) : PostMessage_(hwnd, #WM_KEYUP, #VK_ESCAPE, 0)
+      KeyPressed(#PB_Shortcut_Escape)
     Case 4
-      GetWindowRect_(hwnd, @r)
-      FsTestCheck(Bool(FullScreen = 0), "Esc left full screen")
-      FsTestCheck(Bool(r\left = FsTestRect\left And r\top = FsTestRect\top And r\right = FsTestRect\right And r\bottom = FsTestRect\bottom),
-                  "the windowed rectangle came back: " + Str(r\left) + "," + Str(r\top) + " " + Str(r\right - r\left) + "x" + Str(r\bottom - r\top))
-      FsTestCheck(Bool(GetWindowLongPtr_(hwnd, #GWL_STYLE) = FsTestStyle), "the window's frame and style came back")
+      GL_WindowRect(Win, @r) : GL_ClientPixels(Win, @cw, @ch)
+      FsTestCheck(Bool(FullScreen = 0 And GL_FullscreenIsOn() = 0), "Esc left full screen")
+      FsTestCheck(Bool(r\X = FsTestRect\X And r\Y = FsTestRect\Y And r\W = FsTestRect\W And r\H = FsTestRect\H),
+                  "the windowed rectangle came back: " + Str(r\X) + "," + Str(r\Y) + " " + Str(r\W) + "x" + Str(r\H))
+      FsTestCheck(Bool(cw = FsTestClientW And ch = FsTestClientH), "the client size came back: " + Str(cw) + "x" + Str(ch))
       FsTestLog$ + "fullscreen-test: " + Str(FsTestFails) + " failures" + #LF$
       f = CreateFile(#PB_Any, FsTestFile$) : If f : WriteString(f, FsTestLog$) : CloseFile(f) : EndIf
       Quit = #True
@@ -873,7 +879,7 @@ EndProcedure
 
 ; ---------------------------------------------------------------- main
 Procedure Main()
-  Protected ev.i, now.q, dt.f, arg$, lib.i, fn.i, w.i = 1400, h.i = 880, down.b, log.i, k.i, mute.i
+  Protected ev.i, now.q, dt.f, arg$, w.i = 1400, h.i = 880, log.i, k.i, mute.i
   ; --mute and --exit-after <frames> may stand anywhere; the first other word is what to load.
   For k = 0 To CountProgramParameters() - 1
     If LCase(ProgramParameter(k)) = "--mute"
@@ -892,14 +898,10 @@ Procedure Main()
       arg$ = ProgramParameter(k)
     EndIf
   Next
-  ; Per-monitor DPI awareness before any window exists.
-  lib = OpenLibrary(#PB_Any, "user32.dll")
-  If lib
-    fn = GetFunction(lib, "SetProcessDpiAwarenessContext")
-    If fn : CallFunctionFast(fn, -4) : EndIf
-    CloseLibrary(lib)
-  EndIf
-  ProfMark("dpi")
+  ; Before any window: the engine's host set-up (on Linux the X11 shield and
+  ; XInitThreads; nothing on Windows, where /DPIAWARE makes the window DPI-aware).
+  GL_HostPrepare()
+  ProfMark("host")
   CpmInitTests()
   CtlInit()
   If SynthOn : SynthInit() : EndIf
@@ -907,7 +909,7 @@ Procedure Main()
   Root$ = RepoRoot()
   Folder$ = CpmTestFolder()
   If FileSize(Folder$ + CpmTests(0)\File$) <= 0 And Root$ <> ""
-    Folder$ = Root$ + "Diagnostics\upstream\"      ; where tools/fetch_tests.py puts them
+    Folder$ = Root$ + "Diagnostics" + #PS$ + "upstream" + #PS$   ; where tools/fetch_tests.py puts them
   EndIf
   ProfMark("tables")
   ExamineDesktops()
@@ -921,6 +923,7 @@ Procedure Main()
     MessageRequester("Intel 8080", "The OpenGL window could not be opened.")
     ProcedureReturn
   EndIf
+  GL_HostScaleRead(Gl)                                 ; (the engine's: Linux_DPIScale on Linux)
   Scale = DisplayScale()
   Neon_UIScale = Scale
   ProfMark("scale")
@@ -940,7 +943,7 @@ Procedure Main()
     ; optionally: a ROM (file or folder) and how many frames to run first
     MachineSelfTest = #True
     If ProgramParameter(1) <> "" And LCase(ProgramParameter(1)) <> "--mute"
-      LoadMachine(ResolvePath(ProgramParameter(1)), GetFilePart(RTrim(ProgramParameter(1), "\")))
+      LoadMachine(ResolvePath(ProgramParameter(1)), GetFilePart(RTrim(ProgramParameter(1), #PS$)))
       If Val(ProgramParameter(2)) > 0 : MachineSelfTestFrames = Val(ProgramParameter(2)) : EndIf
     Else
       LoadMachine(MachineTestRom(), "invaders_test.rom")
@@ -978,7 +981,7 @@ Procedure Main()
         Case #PB_Event_MoveWindow : CheckScale() : SizeCanvas()
         Case #PB_Event_Menu
           ; the engine maps Esc to menu event 1001 on the window: Esc leaves full screen
-          If EventMenu() = 1001 : DoAction(CtlAction(#VK_ESCAPE)) : EndIf
+          If EventMenu() = 1001 : KeyPressed(#PB_Shortcut_Escape) : EndIf
         Case #PB_Event_Gadget
           If EventGadget() = Gl
             Select EventType()
@@ -991,18 +994,17 @@ Procedure Main()
           EndIf
       EndSelect
     Until ev = 0
-    If KeyCode And CtlAction(KeyCode) : DoAction(CtlAction(KeyCode)) : EndIf   ; F11 (controls.pbi)
+    KeyPressed(KeyCode)                                ; F11 (controls.pbi)
     ProfEvents + ElapsedMilliseconds() - ProfT
     ProfT = ElapsedMilliseconds()
     If Running : RunSlice(14) : EndIf
     ProfRun + ElapsedMilliseconds() - ProfT
     now = ElapsedMilliseconds() : dt = (now - LastMs) / 1000.0 : LastMs = now
-    down = Bool(MouseDown Or (GetActiveWindow() = Win And (GetAsyncKeyState_(#VK_LBUTTON) & $8000)))
     SetGadgetAttribute(Gl, #PB_OpenGL_SetContext, #True)
     If SynthOn
       Neon_ChromeBeginFrame(SynthX, SynthY, SynthDown, 0, 0, 0, dt)   ; --pointer-test: the real pointer is not read
     Else
-      Neon_ChromeBeginFrame(WindowMouseX(Win), WindowMouseY(Win), down, Wheel, KeyCode, KeyChar, dt)
+      Neon_ChromeBeginFrame(WindowMouseX(Win), WindowMouseY(Win), MouseDown, Wheel, KeyCode, KeyChar, dt)
     EndIf
     Wheel = 0 : KeyCode = 0 : KeyChar = 0
     glBindFramebuffer(#GL_FRAMEBUFFER, 0)
@@ -1060,6 +1062,7 @@ Procedure Main()
         WriteStringN(log, "root=" + Root$)
         WriteStringN(log, "loaded=" + LoadedName$ + " rom=" + InvLoaded$ + " machine_frames=" + Str(InvFrames))
         WriteStringN(log, "status=" + Status$)
+        WriteStringN(log, "inputs_seen=" + RSet(Bin(InputsSeen), 8, "0") + " fullscreen=" + Str(FullScreen))   ; IN 1 bits the keyboard held at some frame
         CloseFile(log)
       EndIf
       Quit = #True

@@ -96,7 +96,7 @@ Procedure.i InvLoadRom(path$)
   For i = 0 To $3FFF : M(i) = 0 : Next
   If FileSize(path$) = -2
     For i = 0 To 3
-      part$ = path$ + "\invaders." + Mid("hgfe", i + 1, 1)
+      part$ = RTrim(path$, #PS$) + #PS$ + "invaders." + Mid("hgfe", i + 1, 1)
       f = ReadFile(#PB_Any, part$)
       If f = 0 : ProcedureReturn 0 : EndIf
       If Lof(f) <> $800 : CloseFile(f) : ProcedureReturn 0 : EndIf
@@ -162,9 +162,11 @@ Procedure InvRunFrame()
 EndProcedure
 
 ; The screen, upright (224 x 256), into a 32-bit buffer, bottom row first
-; (the order glTexImage2D and Windows bitmaps use), with the colour overlay
-; of the original cabinet: a red band near the top, green near the bottom.
-Procedure InvRender(*buf)
+; (the order glTexImage2D and Windows bitmaps use), or top row first when
+; topDown is set (the window passes the engine's #GL_SpriteRowsBottomUp, so a
+; texture it draws is upright on Windows and Linux alike), with the colour
+; overlay of the original cabinet: a red band near the top, green near the bottom.
+Procedure InvRender(*buf, topDown.i = #False)
   Protected x.i, j.i, b.i, k.i, y.i, row.i, col.l, *p.Long
   For x = 0 To 223
     For j = 0 To 31
@@ -185,7 +187,7 @@ Procedure InvRender(*buf)
         Else
           col = $FF000000
         EndIf
-        *p = *buf + (y * 224 + x) * 4
+        If topDown : *p = *buf + (row * 224 + x) * 4 : Else : *p = *buf + (y * 224 + x) * 4 : EndIf
         *p\l = col
       Next
     Next

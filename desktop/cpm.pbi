@@ -89,10 +89,10 @@ Procedure.s CpmTestFolder()
   Protected d$ = GetPathPart(ProgramFilename())
   Protected i.i
   For i = 0 To 3
-    If FileSize(d$ + "Diagnostics\upstream\TST8080.COM") > 0
-      ProcedureReturn d$ + "Diagnostics\upstream\"
+    If FileSize(d$ + "Diagnostics" + #PS$ + "upstream" + #PS$ + "TST8080.COM") > 0
+      ProcedureReturn d$ + "Diagnostics" + #PS$ + "upstream" + #PS$
     EndIf
     d$ = GetPathPart(Left(d$, Len(d$) - 1))
   Next
-  ProcedureReturn GetCurrentDirectory() + "Diagnostics\upstream\"
+  ProcedureReturn GetCurrentDirectory() + "Diagnostics" + #PS$ + "upstream" + #PS$
 EndProcedure

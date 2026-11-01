@@ -5,7 +5,8 @@
 ; Prints the frames run, the instruction and cycle counts, the SHA-256 of
 ; video RAM and (--ports) every OUT with its frame. --right / --fire hold
 ; that control for frames a to b. Exit 0, or 1 if the ROM cannot be read.
-;   pbcompilerc invaders_cli.pb /CONSOLE /OPTIMIZER /EXE invaders_cli.exe
+;   Windows: pbcompilerc invaders_cli.pb /CONSOLE /OPTIMIZER /EXE invaders_cli.exe
+;   Linux:   pbcompilerc invaders_cli.pb -cl -z -o invaders_cli
 XIncludeFile "machine.pbi"
 UseSHA2Fingerprint()
 UsePNGImageEncoder()

@@ -1,5 +1,6 @@
 ; Console verification and benchmark of the desktop 8080 core.
-;   pbcompilerc verify_desktop.pb /CONSOLE /OPTIMIZER /EXE verify_desktop.exe [/CONSTANT CPU_DISPATCH=1]
+;   Windows: pbcompilerc verify_desktop.pb /CONSOLE /OPTIMIZER /EXE verify_desktop.exe [/CONSTANT CPU_DISPATCH=1]
+;   Linux:   pbcompilerc verify_desktop.pb -cl -z -o verify_desktop [-co CPU_DISPATCH=1]
 ; Prints every verdict; exit code 0 only when everything passed.
 XIncludeFile "machine.pbi"
 XIncludeFile "../machine/invaders_test_expect.pbi"
@@ -171,7 +172,7 @@ EndProcedure
 Procedure.i MachineTest()
   Protected rom$ = GetPathPart(CpmTestFolder()) , i.i, adr.l, v.l, ok.i = 1, t.q, c1.l, c2.l, c3.l
   rom$ = GetPathPart(Left(rom$, Len(rom$) - 1))
-  rom$ = GetPathPart(Left(rom$, Len(rom$) - 1)) + "machine\invaders_test.rom"
+  rom$ = GetPathPart(Left(rom$, Len(rom$) - 1)) + "machine" + #PS$ + "invaders_test.rom"
   If InvLoadRom(rom$) = 0
     PrintN("machine test FAIL: cannot read " + rom$ + " (run tools/make_test_rom.py)")
     ProcedureReturn 0
